@@ -1,0 +1,3 @@
+VK Bot for playing Black Jack
+
+the project is currently under development...
