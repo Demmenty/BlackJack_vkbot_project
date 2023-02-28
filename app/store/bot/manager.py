@@ -69,9 +69,18 @@ class BotManager:
         elif update.text.lower() == "[club218753438|@shadow_dementia] правила игры":
             await self.app.store.game_manager.game_rules(update)
 
+        elif update.text.lower() == "[club218753438|@shadow_dementia] отменить игру":
+            game = await self.app.store.game.get_by_peer(update.peer_id)
+            if game.state == "define_players":
+                await self.app.store.game.change_state(game.id, "inactive")
+                msg = BotMessage(
+                    peer_id=update.peer_id,
+                    text=("Игра отменена %0A"),
+                )
+                await self.app.store.vk_api.send_message(msg)
+
         elif update.text == "[club218753438|@shadow_dementia]":
             # TODO настроить варианты в зависимости от состояния игры
             await self.app.store.game_manager.offer_to_play(update)
 
-        # TODO обработка "отменить игру"
         # TODO обработка присоединения игроков
