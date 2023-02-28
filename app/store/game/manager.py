@@ -1,10 +1,10 @@
 import typing
-from asyncio import sleep as asleep
 from logging import getLogger
 
 from app.store.vk_api.dataclasses import BotMessage, Keyboard, Update
 
-from .buttons import GameButtons
+from .buttons import GameButton
+from .phrases import GamePhrase
 
 if typing.TYPE_CHECKING:
     from app.web.app import Application
@@ -15,22 +15,21 @@ class GameManager:
 
     def __init__(self, app: "Application"):
         self.app = app
-        self.button = GameButtons()
         self.logger = getLogger("handler")
 
-    async def offer_to_play(self, update: Update) -> None:
-        """предложение поиграть"""
+    async def offer_game(self, update: Update) -> None:
+        """отправляет в беседу предложение поиграть"""
 
         # TODO проверка, что игра не идет
         # TODO проверка, если в беседе уже была игра -> статистика
         msg = BotMessage(
             peer_id=update.peer_id,
-            text="Сыграем в BlackJack? 😉",
-            keyboard=Keyboard(buttons=[[self.button.start, self.button.rules]]).json,
+            text=GamePhrase.game_offer,
+            keyboard=Keyboard(buttons=[[GameButton.start, GameButton.rules]]).json,
         )
         await self.app.store.vk_api.send_message(msg)
 
-    async def new_game(self, update: Update) -> None:
+    async def start_new_game(self, update: Update) -> None:
         """начало новой игры"""
 
         # проверка, что игра не идет
@@ -39,43 +38,51 @@ class GameManager:
         if game.state != "inactive":
             msg = BotMessage(
                 peer_id=update.peer_id,
-                text=("Игра уже идёт, алло 🤨"),
+                text=GamePhrase.game_is_on,
             )
             await self.app.store.vk_api.send_message(msg)
+            return
 
-        else:
-            msg = BotMessage(
-                peer_id=update.peer_id,
-                text=("Да начнется битва! %0A" + "Весь чат в труху! %0A"),
-            )
-            await self.app.store.vk_api.send_message(msg)
-            await asleep(3)
+        msg = BotMessage(
+            peer_id=update.peer_id,
+            text=GamePhrase.game_begun,
+        )
+        await self.app.store.vk_api.send_message(msg)
 
-            # TODO кнопка отказа, чтобы не ждать:
-            # просьба сделать админом -> получить участников беседы -> сравнить
-            msg = BotMessage(
-                peer_id=update.peer_id,
-                text=("Кто будет участвовать? %0A" + "Жду заявок 15 секунд..."),
-                keyboard=Keyboard(
-                    buttons=[[self.button.acceptgame, self.button.abort]]
-                ).json,
-            )
-            await self.app.store.vk_api.send_message(msg)
-            await self.app.store.game.change_state(game.id, "define_players")
+        # TODO кнопка отказа, чтобы не ждать:
+        # просьба сделать админом -> получить участников беседы -> сравнить
+        msg = BotMessage(
+            peer_id=update.peer_id,
+            text=GamePhrase.wait_players,
+            keyboard=Keyboard(
+                buttons=[[GameButton.acceptgame, GameButton.abort]]
+            ).json,
+        )
+        await self.app.store.vk_api.send_message(msg)
+        await self.app.store.game.change_state(game.id, "define_players")
 
-            # TODO поставить таймер
+        # TODO поставить таймер
 
-
-    async def game_rules(self, update: Update) -> None:
+    async def send_game_rules(self, update: Update) -> None:
         """описание правил игры"""
 
         # TODO проверить статус игры -> отправлять кнопку только если "inactive"
 
         msg = BotMessage(
             peer_id=update.peer_id,
-            text=(
-                "В гугле забанили? %0A%0A" + "https://ru.wikihow.com/играть-в-блэкджек"
-            ),
-            keyboard=Keyboard(buttons=[[self.button.start_already]]).json,
+            text=GamePhrase.rules,
+            keyboard=Keyboard(buttons=[[GameButton.start]]).json,
         )
         await self.app.store.vk_api.send_message(msg)
+
+    async def cancel_game(self, update: Update) -> None:
+        """заканчивает активную игру в чате переданного update"""
+
+        game = await self.app.store.game.get_by_peer(update.peer_id)
+        if game.state == "define_players":
+            await self.app.store.game.change_state(game.id, "inactive")
+            msg = BotMessage(
+                peer_id=update.peer_id,
+                text=GamePhrase.game_abort,
+            )
+            await self.app.store.vk_api.send_message(msg)

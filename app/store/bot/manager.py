@@ -1,8 +1,9 @@
 import typing
-from asyncio import sleep as asleep
 from logging import getLogger
 
-from app.store.vk_api.dataclasses import BotMessage, Keyboard, Update
+from app.store.game.phrases import GamePhrase
+from app.store.bot.phrases import BotPhrase
+from app.store.vk_api.dataclasses import BotMessage, Update
 
 if typing.TYPE_CHECKING:
     from app.web.app import Application
@@ -34,10 +35,7 @@ class BotManager:
 
         msg = BotMessage(
             peer_id=update.peer_id,
-            text=(
-                "Создайте чат и пригласите меня, тогда сможем поиграть в BlackJack %0A"
-                + "Больше я ничего пока не умею :("
-            ),
+            text=BotPhrase.pm_msg,
         )
         await self.app.store.vk_api.send_message(msg)
 
@@ -46,41 +44,37 @@ class BotManager:
 
         msg = BotMessage(
             peer_id=update.peer_id,
-            text="Вечер в хату!",
+            text=BotPhrase.greeting,
         )
         await self.app.store.vk_api.send_message(msg)
-        await asleep(4)
 
         game = await self.app.store.game.get_by_peer(update.peer_id)
-
         if game.state == "inactive":
-            await self.app.store.game_manager.offer_to_play(update)
-            
+            await self.app.store.game_manager.offer_game(update)
 
     async def handle_chat_msg(self, update: Update) -> None:
         """обработка сообщения в беседе"""
 
-        if (
-            update.text.lower() == "[club218753438|@shadow_dementia] начать игру"
-            or update.text.lower() == "[club218753438|@shadow_dementia] начать уже игру"
-        ):
-            await self.app.store.game_manager.new_game(update)
+        update_txt = self._cleaned_update_text(update.text)
 
-        elif update.text.lower() == "[club218753438|@shadow_dementia] правила игры":
-            await self.app.store.game_manager.game_rules(update)
+        game_handlers = {
+            "начать игру": self.app.store.game_manager.start_new_game,
+            "правила игры": self.app.store.game_manager.send_game_rules,
+            "отменить игру": self.app.store.game_manager.cancel_game,
+            "": self.app.store.game_manager.offer_game,
+        }
 
-        elif update.text.lower() == "[club218753438|@shadow_dementia] отменить игру":
-            game = await self.app.store.game.get_by_peer(update.peer_id)
-            if game.state == "define_players":
-                await self.app.store.game.change_state(game.id, "inactive")
-                msg = BotMessage(
-                    peer_id=update.peer_id,
-                    text=("Игра отменена %0A"),
-                )
-                await self.app.store.vk_api.send_message(msg)
-
-        elif update.text == "[club218753438|@shadow_dementia]":
-            # TODO настроить варианты в зависимости от состояния игры
-            await self.app.store.game_manager.offer_to_play(update)
+        handler = game_handlers.get(update_txt)
+        await handler(update)
 
         # TODO обработка присоединения игроков
+
+    def _cleaned_update_text(self, text: str) -> str:
+        """возвращает полученный ботом текст
+        очищенным от обращения, пробелов и в нижнем регистре"""
+
+        cleaned_text = (
+            text.replace("[club218753438|@shadow_dementia]", "").strip().lower()
+        )
+
+        return cleaned_text

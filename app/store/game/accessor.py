@@ -1,7 +1,7 @@
 from sqlalchemy import select, update
 
 from app.base.base_accessor import BaseAccessor
-from app.game.models import *
+from app.game.models import ChatModel, GameModel
 
 
 class GameAccessor(BaseAccessor):
@@ -12,31 +12,31 @@ class GameAccessor(BaseAccessor):
 
         async with self.app.database.session() as session:
             async with session.begin():
-                q = select(PeerModel).filter_by(vk_peer_id=peer_id)
+                q = select(ChatModel).filter_by(vk_peer_id=peer_id)
                 result = await session.execute(q)
-                peer = result.scalars().first()
+                chat = result.scalars().first()
 
-                if not peer:
-                    peer = await self.create_peer(peer_id)
+                if not chat:
+                    chat = await self.create_chat(peer_id)
 
                 game = GameModel(
-                    peer_id=peer.id,
+                    peer_id=chat.id,
                 )
                 session.add(game)
                 await session.commit()
 
         return game
 
-    async def create_peer(self, peer_id: int) -> PeerModel:
+    async def create_chat(self, peer_id: int) -> ChatModel:
         """создание новой записи о чате"""
 
         async with self.app.database.session() as session:
             async with session.begin():
-                peer = PeerModel(vk_peer_id=peer_id)
-                session.add(peer)
+                chat = ChatModel(vk_peer_id=peer_id)
+                session.add(chat)
                 await session.commit()
 
-        return peer
+        return chat
 
     async def get_by_peer(self, peer_id: int) -> GameModel:
         """возвращает gamemodel по peer_id из vk.
@@ -46,7 +46,7 @@ class GameAccessor(BaseAccessor):
             async with session.begin():
                 q = (
                     select(GameModel)
-                    .join(PeerModel, GameModel.peer_id == PeerModel.id)
+                    .join(ChatModel, GameModel.chat_id == ChatModel.id)
                     .filter_by(vk_peer_id=peer_id)
                 )
                 result = await session.execute(q)

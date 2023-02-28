@@ -4,8 +4,6 @@ from sqlalchemy.ext.asyncio import (AsyncEngine, AsyncSession,
                                     create_async_engine)
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-from app.admin.models import *
-from app.game.models import *
 from app.store.database import db
 
 if TYPE_CHECKING:
