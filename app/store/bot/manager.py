@@ -15,7 +15,7 @@ class BotManager:
         self.app = app
         self.logger = getLogger("handler")
 
-    async def handle_updates(self, updates: list[Update]):
+    async def handle_updates(self, updates: list[Update]) -> None:
         """сюда поступают все полученные события от вк"""
 
         for update in updates:
@@ -29,22 +29,19 @@ class BotManager:
             else:
                 await self.handle_chat_msg(update)
 
-    async def handle_private_msg(self, update: Update):
+    async def handle_private_msg(self, update: Update) -> None:
         """обработка сообщения в личке"""
 
-        if (
-            update.text.lower() == "начать игру"
-            or update.text.lower() == "начать уже игру"
-        ):
-            await self.app.store.game_manager.new_game(update)
+        msg = BotMessage(
+            peer_id=update.peer_id,
+            text=(
+                "Создайте чат и пригласите меня, тогда сможем поиграть в BlackJack %0A"
+                + "Больше я ничего пока не умею :("
+            ),
+        )
+        await self.app.store.vk_api.send_message(msg)
 
-        elif update.text.lower() == "правила игры":
-            await self.app.store.game_manager.game_rules(update)
-
-        else:
-            await self.app.store.game_manager.offer_to_play(update)
-
-    async def handle_chat_invite(self, update: Update):
+    async def handle_chat_invite(self, update: Update) -> None:
         """обработка приглашения в беседу"""
 
         msg = BotMessage(
@@ -53,9 +50,14 @@ class BotManager:
         )
         await self.app.store.vk_api.send_message(msg)
         await asleep(4)
-        await self.app.store.game_manager.offer_to_play(update)
 
-    async def handle_chat_msg(self, update: Update):
+        game = await self.app.store.game.get_by_peer(update.peer_id)
+
+        if game.state == "inactive":
+            await self.app.store.game_manager.offer_to_play(update)
+            
+
+    async def handle_chat_msg(self, update: Update) -> None:
         """обработка сообщения в беседе"""
 
         if (
@@ -68,4 +70,8 @@ class BotManager:
             await self.app.store.game_manager.game_rules(update)
 
         elif update.text == "[club218753438|@shadow_dementia]":
+            # TODO настроить варианты в зависимости от состояния игры
             await self.app.store.game_manager.offer_to_play(update)
+
+        # TODO обработка "отменить игру"
+        # TODO обработка присоединения игроков
