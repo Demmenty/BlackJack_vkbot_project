@@ -1,7 +1,6 @@
 import typing
 from logging import getLogger
 
-from app.store.game.phrases import GamePhrase
 from app.store.bot.phrases import BotPhrase
 from app.store.vk_api.dataclasses import BotMessage, Update
 
@@ -48,8 +47,9 @@ class BotManager:
         )
         await self.app.store.vk_api.send_message(msg)
 
-        game = await self.app.store.game.get_by_peer(update.peer_id)
-        if game.state == "inactive":
+        game_is_on = await self.app.store.game.is_game_on(chat_id=update.peer_id)
+
+        if not game_is_on:
             await self.app.store.game_manager.offer_game(update)
 
     async def handle_chat_msg(self, update: Update) -> None:
@@ -65,7 +65,9 @@ class BotManager:
         }
 
         handler = game_handlers.get(update_txt)
-        await handler(update)
+
+        if handler:
+            await handler(update)
 
         # TODO обработка присоединения игроков
 
