@@ -37,3 +37,15 @@ class GameAccessor(BaseAccessor):
                 name = result.scalars().first()
 
         return name
+    
+
+    async def create_player(self, vk_user: VKUserModel, game: GameModel) -> PlayerModel:
+        """регистрирует пользователя в качестве игрока, возвращает его модель"""
+
+        async with self.app.database.session() as session:
+            async with session.begin():
+                player = PlayerModel(user_id=vk_user.id, game_id=game.id)
+                session.add(player)
+                await session.commit()
+
+        return player
