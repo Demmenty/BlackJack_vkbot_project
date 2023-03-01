@@ -125,3 +125,22 @@ class VkApiAccessor(BaseAccessor):
         async with self.session.get(url) as response:
             data = await response.json()
             self.logger.info(data)
+
+    async def get_username(self, user_id: int) -> str:
+        """получить имя пользователя по его id в vk"""
+
+        url = self._build_query(
+            host=API_PATH,
+            method="users.get",
+            params={
+                "user_ids": user_id,
+                "access_token": self.app.config.bot.token,
+            },
+        )
+        async with self.session.get(url) as response:
+            data = await response.json()
+            self.logger.info(data)
+
+        username = data["response"][0]["first_name"]
+        print("! username", username)
+        return username
