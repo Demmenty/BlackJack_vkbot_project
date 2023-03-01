@@ -42,6 +42,7 @@ class GameAccessor(BaseAccessor):
     async def create_player(self, vk_user: VKUserModel, game: GameModel) -> PlayerModel:
         """регистрирует пользователя в качестве игрока, возвращает его модель"""
 
+        # TODO проверить проставляемость айдишки
         async with self.app.database.session() as session:
             async with session.begin():
                 player = PlayerModel(user_id=vk_user.id, game_id=game.id)
