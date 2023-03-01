@@ -26,3 +26,14 @@ class GameAccessor(BaseAccessor):
                     await session.commit()
 
         return vk_user
+
+    async def get_player_name(self, player_id: int) -> str:
+        """возвращает имя игрока из базы по его id"""
+
+        async with self.app.database.session() as session:
+            async with session.begin():
+                q = select(VKUserModel.name).join_from(VKUserModel, PlayerModel).filter_by(id=player_id)
+                result = await session.execute(q)
+                name = result.scalars().first()
+
+        return name
