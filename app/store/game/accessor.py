@@ -2,6 +2,7 @@ from sqlalchemy import select, update
 
 from app.base.base_accessor import BaseAccessor
 from app.game.models import ChatModel, GameModel
+from app.game.models import PlayerModel
 
 
 class GameAccessor(BaseAccessor):
@@ -76,3 +77,8 @@ class GameAccessor(BaseAccessor):
             async with session.begin():
                 q = update(GameModel).filter_by(id=game_id).values(state=new_state)
                 await session.execute(q)
+
+    async def get_all_players(self, game_id:int) -> list[PlayerModel]:
+        """возвращает список моделей игроков с переданным id игры"""
+        # TODO
+        raise NotImplementedError

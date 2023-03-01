@@ -1,4 +1,5 @@
 import typing
+from asyncio import sleep as asleep
 from logging import getLogger
 
 from app.store.vk_api.dataclasses import BotMessage, Keyboard, Update
@@ -65,8 +66,55 @@ class GameManager:
         await self.app.store.vk_api.send_message(msg)
         # переводим игру в следующее состояние
         await self.app.store.game.change_game_state(game.id, "define_players")
+        # ждем 15 секунд
+        await asleep(15)
+        # чекаем игроков, успевших зарегаться на игру
+        players = await self.app.store.game.get_all_players(game_id=game.id)
+        # проверяем, что есть хотя бы один
+        if not players:
+            await self.app.store.game.change_game_state(game.id, "inactive")
+            msg = BotMessage(
+                peer_id=update.peer_id,
+                text=GamePhrase.no_players,
+            )
+            await self.app.store.vk_api.send_message(msg)
+            return
+        # передаем управление обработчику следующей стадии
+        await self.manage_betting(game.id, players)
+        
+    async def register_player(self, update: Update) -> None:
+        """регистрируем пользователя в игре"""
 
-        # TODO поставить таймер
+        # статус игры должен быть "define_players"
+        # проверяем, идет ли вообще игра в этом чате
+        game_is_on = await self.app.store.game.is_game_on(chat_id=update.peer_id)
+        if not game_is_on:
+            # TODO подумать над отправкой сообщения
+            return
+        
+        game = self.app.store.game.get_or_create_game(chat_id=update.peer_id)
+        # TODO убрать магические стринги, сделать нормально. но потом.
+        if game.state != "define_players":
+            # TODO подумать над отправкой сообщения
+            return
+        
+        # создаем игрока в базе
+        vk_user = await self.app.store.game.get_or_create_vk_user(vk_user_id=update.from_id)
+        player = await self.app.store.game.create_player(vk_user=vk_user, game=game)
+
+        # TODO проверить на работоспособность после слияния!
+        msg = BotMessage(
+            peer_id=update.peer_id,
+            text=vk_user.name + GamePhrase.player_registered,
+        )
+        await self.app.store.vk_api.send_message(msg)
+    
+    async def manage_betting(self, game_id: int, players: list) -> None:
+        """стадия ставок"""
+
+        # TODO раздать всем деняк
+        
+        raise NotImplementedError
 
     async def send_game_rules(self, update: Update) -> None:
         """описание правил игры"""

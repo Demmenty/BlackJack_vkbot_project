@@ -61,6 +61,7 @@ class BotManager:
             "начать игру": self.app.store.game_manager.start_new_game,
             "правила игры": self.app.store.game_manager.send_game_rules,
             "отменить игру": self.app.store.game_manager.cancel_game,
+            "я играю!": self.app.store.game_manager.register_player,
             "": self.app.store.game_manager.offer_game,
         }
 
@@ -68,8 +69,6 @@ class BotManager:
 
         if handler:
             await handler(update)
-
-        # TODO обработка присоединения игроков
 
     def _cleaned_update_text(self, text: str) -> str:
         """возвращает полученный ботом текст
