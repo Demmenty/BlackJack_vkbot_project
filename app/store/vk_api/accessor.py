@@ -142,5 +142,5 @@ class VkApiAccessor(BaseAccessor):
             self.logger.info(data)
 
         username = data["response"][0]["first_name"]
-        print("! username", username)
         return username
+    
