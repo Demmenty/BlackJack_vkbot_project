@@ -1,0 +1,23 @@
+// pyproject.toml
+
+[tool.black]
+line-length = 80
+target-version = ['py310']
+exclude = '''
+/(
+  | \.git
+  | \.mypy_cache
+  | \.venv
+  | alembic
+  | env
+  | venv
+  | \work_notes
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+combine_as_imports = true
+line_length = 80
+skip_glob = ["*/*/alembic"]

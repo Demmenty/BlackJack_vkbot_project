@@ -1,8 +1,8 @@
 import typing
-from asyncio import sleep as asleep
 from logging import getLogger
 
-from app.store.vk_api.dataclasses import BotMessage, Keyboard, Update
+from app.store.bot.phrases import BotPhrase
+from app.store.vk_api.dataclasses import BotMessage, Update
 
 if typing.TYPE_CHECKING:
     from app.web.app import Application
@@ -15,7 +15,7 @@ class BotManager:
         self.app = app
         self.logger = getLogger("handler")
 
-    async def handle_updates(self, updates: list[Update]):
+    async def handle_updates(self, updates: list[Update]) -> None:
         """сюда поступают все полученные события от вк"""
 
         for update in updates:
@@ -29,43 +29,53 @@ class BotManager:
             else:
                 await self.handle_chat_msg(update)
 
-    async def handle_private_msg(self, update: Update):
+    async def handle_private_msg(self, update: Update) -> None:
         """обработка сообщения в личке"""
 
-        if (
-            update.text.lower() == "начать игру"
-            or update.text.lower() == "начать уже игру"
-        ):
-            await self.app.store.game_manager.new_game(update)
+        msg = BotMessage(
+            peer_id=update.peer_id,
+            text=BotPhrase.pm_msg,
+        )
+        await self.app.store.vk_api.send_message(msg)
 
-        elif update.text.lower() == "правила игры":
-            await self.app.store.game_manager.game_rules(update)
-
-        else:
-            await self.app.store.game_manager.offer_to_play(update)
-
-    async def handle_chat_invite(self, update: Update):
+    async def handle_chat_invite(self, update: Update) -> None:
         """обработка приглашения в беседу"""
 
         msg = BotMessage(
             peer_id=update.peer_id,
-            text="Вечер в хату!",
+            text=BotPhrase.greeting,
         )
         await self.app.store.vk_api.send_message(msg)
-        await asleep(4)
-        await self.app.store.game_manager.offer_to_play(update)
 
-    async def handle_chat_msg(self, update: Update):
+        game_is_on = await self.app.store.game.is_game_on(chat_id=update.peer_id)
+
+        if not game_is_on:
+            await self.app.store.game_manager.offer_game(update)
+
+    async def handle_chat_msg(self, update: Update) -> None:
         """обработка сообщения в беседе"""
 
-        if (
-            update.text.lower() == "[club218753438|@shadow_dementia] начать игру"
-            or update.text.lower() == "[club218753438|@shadow_dementia] начать уже игру"
-        ):
-            await self.app.store.game_manager.new_game(update)
+        update_txt = self._cleaned_update_text(update.text)
 
-        elif update.text.lower() == "[club218753438|@shadow_dementia] правила игры":
-            await self.app.store.game_manager.game_rules(update)
+        game_handlers = {
+            "начать игру": self.app.store.game_manager.start_new_game,
+            "правила игры": self.app.store.game_manager.send_game_rules,
+            "отменить игру": self.app.store.game_manager.cancel_game,
+            "я играю!": self.app.store.game_manager.register_player,
+            "": self.app.store.game_manager.offer_game,
+        }
 
-        elif update.text == "[club218753438|@shadow_dementia]":
-            await self.app.store.game_manager.offer_to_play(update)
+        handler = game_handlers.get(update_txt)
+
+        if handler:
+            await handler(update)
+
+    def _cleaned_update_text(self, text: str) -> str:
+        """возвращает полученный ботом текст
+        очищенным от обращения, пробелов и в нижнем регистре"""
+
+        cleaned_text = (
+            text.replace("[club218753438|@shadow_dementia]", "").strip().lower()
+        )
+
+        return cleaned_text
