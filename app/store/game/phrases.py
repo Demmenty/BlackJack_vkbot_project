@@ -13,3 +13,4 @@ class GamePhrase:
     player_registered = " будет играть, отлично!"
     player_unregistered = " не участвует, ок"
     player_already_registered = "Вы зарегистрированы, "
+    active_players = "Участники:  %0A"

@@ -116,3 +116,14 @@ class GameNotification:
             text=GamePhrase.no_players,
         )
         await self.app.store.vk_api.send_message(msg)
+
+    async def about_active_players(
+        self, peer_id: int, names: list[str]
+    ) -> None:
+        """уведомляет чат о том, кто будет играть сейчас"""
+
+        msg = BotMessage(
+            peer_id=peer_id,
+            text=GamePhrase.active_players + ", ".join(names),
+        )
+        await self.app.store.vk_api.send_message(msg)

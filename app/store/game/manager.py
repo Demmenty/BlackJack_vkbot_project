@@ -72,7 +72,13 @@ class GameManager:
             await self.notify.about_no_players(peer_id=update.peer_id)
             return
 
-        # TODO уведомление с перечислением зарегистрированных игроков
+        players_names = [
+            await self.app.store.game.get_player_name(player.id)
+            for player in players
+        ]
+        await self.notify.about_active_players(
+            peer_id=update.peer_id, names=players_names
+        )
         await self.manage_betting(game.id, players)
 
     async def register_player(self, update: Update) -> None:
