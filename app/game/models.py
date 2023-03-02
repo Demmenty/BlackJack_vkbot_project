@@ -55,6 +55,8 @@ class PlayerModel(db):
     user_id = Column(ForeignKey("vk_user.id"), nullable=False)
     game_id = Column(ForeignKey("game.id", ondelete="CASCADE"), nullable=False)
     cash = Column(Integer, default=1000, nullable=False)
+    bet = Column(Integer, nullable=True)
+    is_active = Column(Boolean, default=True, nullable=False)
 
     game = relationship("GameModel", back_populates="players")
     vk_user = relationship("VKUserModel", back_populates="players")
