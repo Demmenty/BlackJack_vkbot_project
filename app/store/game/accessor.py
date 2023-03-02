@@ -1,3 +1,5 @@
+from typing import Tuple
+
 from sqlalchemy import select, update
 
 from app.base.base_accessor import BaseAccessor
@@ -42,19 +44,26 @@ class GameAccessor(BaseAccessor):
 
         return name
 
-    async def create_player(
+    async def get_or_create_player(
         self, vk_user: VKUserModel, game: GameModel
-    ) -> PlayerModel:
-        """регистрирует пользователя в качестве игрока, возвращает его модель"""
+    ) -> Tuple[PlayerModel, bool]:
+        """регистрирует пользователя в качестве игрока,
+        возвращает кортеж: его модель и предикат is_created"""
 
-        # id выставляется сама по порядку ✔
         async with self.app.database.session() as session:
             async with session.begin():
-                player = PlayerModel(user_id=vk_user.id, game_id=game.id)
-                session.add(player)
-                await session.commit()
+                q = select(PlayerModel).filter_by(user_id=vk_user.id, game_id=game.id)
+                result = await session.execute(q)
+                player = result.scalars().first()
+                is_created = False
 
-        return player
+                if not player:
+                    player = PlayerModel(user_id=vk_user.id, game_id=game.id)
+                    session.add(player)
+                    await session.commit()
+                    is_created - True
+
+        return player, is_created
 
     async def get_or_create_game(self, chat_id: int) -> GameModel:
         """возвращает GameModel, если нет - создает неактивную
