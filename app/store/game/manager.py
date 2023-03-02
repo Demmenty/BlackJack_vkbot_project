@@ -17,7 +17,7 @@ class GameManager:
 
     def __init__(self, app: "Application"):
         self.app = app
-        self.notify = GameNotification()
+        self.notify = GameNotification(app)
         self.logger = getLogger("handler")
 
     async def offer_game(self, update: Update) -> None:
@@ -59,24 +59,29 @@ class GameManager:
         await self.app.store.game.change_game_state(game.id, "waiting_players")
 
         await asleep(15)
+        # FIXME а всмысле апдейты не присылаются во время таймера?
+        # можно регистрировать timestampы и считать от них,
+        # но может, я не замечаю чего-то очевидного?..
 
-        players = await self.app.store.game.get_all_players(game_id=game.id)
+        players = await self.app.store.game.get_active_players(game_id=game.id)
 
         if not players:
-            await self.cancel_game(update)
+            await self.abort_game(update)
             await self.notify.about_no_players(peer_id=update.peer_id)
             return
 
+        # TODO уведомление с перечислением зарегистрированных игроков
         await self.manage_betting(game.id, players)
 
     async def register_player(self, update: Update) -> None:
         """регистрирует пользователя в качестве игрока"""
 
+        # TODO подумать над вынесением этой проверки в декоратор -> @game_is_on
         game_is_on = await self.app.store.game.is_game_on(
             chat_id=update.peer_id
         )
         if not game_is_on:
-            # TODO подумать над отправкой сообщения
+            await self.notify.that_game_is_off(peer_id=update.peer_id)
             return
 
         game = await self.app.store.game.get_or_create_game(
@@ -87,7 +92,6 @@ class GameManager:
             # TODO подумать над отправкой сообщения
             return
 
-        # TODO отрегулировать, чтобы один и тот же не создавался
         vk_user = await self.app.store.game.get_or_create_vk_user(
             vk_user_id=update.from_id
         )
@@ -95,23 +99,48 @@ class GameManager:
             vk_user=vk_user, game=game
         )
 
+        # TODO подумать, можно ли это лучше написать
         if player_created:
             await self.notify.that_player_registered(
                 peer_id=update.peer_id, username=vk_user.name
             )
-        else:
+        elif player.is_active:
             await self.notify.that_player_registered_already(
                 peer_id=update.peer_id, username=vk_user.name
             )
+        else:
+            await self.app.store.game.change_player_state(
+                player_id=player.id, is_active=True
+            )
+            await self.notify.that_player_registered(
+                peer_id=update.peer_id, username=vk_user.name
+            )
 
-    async def cash_distribution(self, game_id: int, players: list) -> None:
-        """раздаем кеш"""
+    async def unregister_player(self, update: Update) -> None:
+        """отмечает игрока как неактивного"""
+        # TODO вынести cтейты в енам, да-да
+
+        game = await self.app.store.game.get_or_create_game(
+            chat_id=update.peer_id
+        )
+        if not game or game.state != "waiting_players":
+            return
+
+        vk_user = await self.app.store.game.get_or_create_vk_user(
+            vk_user_id=update.from_id
+        )
+        player, is_created = await self.app.store.game.get_or_create_player(
+            vk_user=vk_user, game=game
+        )
+        await self.app.store.game.change_player_state(
+            player_id=player.id, is_active=False
+        )
+        await self.notify.that_player_unregistered(
+            peer_id=update.peer_id, username=vk_user.name
+        )
 
     async def manage_betting(self, game_id: int, players: list) -> None:
         """стадия ставок"""
-
-        # TODO раздать всем деняк
-        # TODO если есть LastGame, деняк не давать - типа второй круг
 
         raise NotImplementedError
 

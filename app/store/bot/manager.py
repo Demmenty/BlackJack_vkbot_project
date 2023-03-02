@@ -65,7 +65,8 @@ class BotManager:
             "правила игры": self.app.store.game_manager.send_game_rules,
             "остановить игру": self.app.store.game_manager.cancel_game,
             "отменить игру": self.app.store.game_manager.abort_game,
-            "я играю!": self.app.store.game_manager.register_player,
+            "я в деле!": self.app.store.game_manager.register_player,
+            "я пас": self.app.store.game_manager.unregister_player,
             "": self.app.store.game_manager.offer_game,
         }
 

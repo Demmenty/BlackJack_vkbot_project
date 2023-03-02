@@ -68,17 +68,32 @@ class GameNotification:
             peer_id=peer_id,
             text=GamePhrase.wait_players,
             keyboard=Keyboard(
-                buttons=[[GameButton.acceptgame, GameButton.abort]]
+                buttons=[
+                    [
+                        GameButton.register,
+                        GameButton.unregister,
+                        GameButton.abort,
+                    ]
+                ]
             ).json,
         )
         await self.app.store.vk_api.send_message(msg)
 
     async def that_player_registered(self, peer_id: int, username: int) -> None:
         """уведомляет чат о регистрации игрока (передать его имя)"""
-        # TODO выслать кнопку "передумал" и реализовать такую функцию
         msg = BotMessage(
             peer_id=peer_id,
             text=username + GamePhrase.player_registered,
+        )
+        await self.app.store.vk_api.send_message(msg)
+
+    async def that_player_unregistered(
+        self, peer_id: int, username: int
+    ) -> None:
+        """уведомляет чат о том, что игрок не участвует (передать его имя)"""
+        msg = BotMessage(
+            peer_id=peer_id,
+            text=username + GamePhrase.player_unregistered,
         )
         await self.app.store.vk_api.send_message(msg)
 

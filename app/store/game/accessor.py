@@ -67,6 +67,20 @@ class GameAccessor(BaseAccessor):
 
         return player, is_created
 
+    async def change_player_state(
+        self, player_id: int, is_active: bool
+    ) -> None:
+        """меняет статус игрока - активный/неактивный, передать желаемое значение в bool"""
+
+        async with self.app.database.session() as session:
+            async with session.begin():
+                q = (
+                    update(PlayerModel)
+                    .filter_by(id=player_id)
+                    .values(is_active=is_active)
+                )
+                await session.execute(q)
+
     async def get_or_create_game(self, chat_id: int) -> GameModel:
         """возвращает GameModel, если нет - создает неактивную
         передать chat_id (это peer_id из vk)"""
@@ -139,7 +153,7 @@ class GameAccessor(BaseAccessor):
                 )
                 await session.execute(q)
 
-    async def get_all_players(self, game_id: int) -> list[PlayerModel]:
-        """возвращает список моделей игроков с переданным id игры"""
+    async def get_active_players(self, game_id: int) -> list[PlayerModel]:
+        """возвращает список активных игроков с переданным id игры"""
         # TODO
         raise NotImplementedError
