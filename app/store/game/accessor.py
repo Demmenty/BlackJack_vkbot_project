@@ -52,7 +52,9 @@ class GameAccessor(BaseAccessor):
 
         async with self.app.database.session() as session:
             async with session.begin():
-                q = select(PlayerModel).filter_by(user_id=vk_user.id, game_id=game.id)
+                q = select(PlayerModel).filter_by(
+                    user_id=vk_user.id, game_id=game.id
+                )
                 result = await session.execute(q)
                 player = result.scalars().first()
                 is_created = False

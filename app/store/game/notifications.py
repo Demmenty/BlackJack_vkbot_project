@@ -9,7 +9,7 @@ if typing.TYPE_CHECKING:
     from app.web.app import Application
 
 
-class GameNotification():
+class GameNotification:
     """уведомления в чат игры"""
 
     def __init__(self, app: "Application"):
@@ -42,9 +42,7 @@ class GameNotification():
         )
         await self.app.store.vk_api.send_message(msg)
 
-    async def that_game_canceled(
-        self, peer_id: int, username: str
-    ) -> None:
+    async def that_game_canceled(self, peer_id: int, username: str) -> None:
         """уведомляет чат о том, что игра закончена (раньше времени)
         передать username = имя нажавшего на кнопку остановки"""
 
@@ -75,9 +73,7 @@ class GameNotification():
         )
         await self.app.store.vk_api.send_message(msg)
 
-    async def that_player_registered(
-        self, peer_id: int, username: int
-    ) -> None:
+    async def that_player_registered(self, peer_id: int, username: int) -> None:
         """уведомляет чат о регистрации игрока (передать его имя)"""
         # TODO выслать кнопку "передумал" и реализовать такую функцию
         msg = BotMessage(
@@ -105,4 +101,3 @@ class GameNotification():
             text=GamePhrase.no_players,
         )
         await self.app.store.vk_api.send_message(msg)
-

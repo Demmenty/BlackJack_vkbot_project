@@ -5,8 +5,8 @@ from logging import getLogger
 from app.store.vk_api.dataclasses import BotMessage, Keyboard, Update
 
 from .buttons import GameButton
-from .phrases import GamePhrase
 from .notifications import GameNotification
+from .phrases import GamePhrase
 
 if typing.TYPE_CHECKING:
     from app.web.app import Application
@@ -106,7 +106,6 @@ class GameManager:
 
     async def cash_distribution(self, game_id: int, players: list) -> None:
         """раздаем кеш"""
-
 
     async def manage_betting(self, game_id: int, players: list) -> None:
         """стадия ставок"""
