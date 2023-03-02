@@ -44,6 +44,7 @@ class GameManager:
 
         # TODO кнопка отказа, чтобы не ждать: сделать админом > получить участников чата > сравнить
 
+        # TODO сделать эту проверку декоратором, наверное
         game_is_on = await self.app.store.game.is_game_on(
             chat_id=update.peer_id
         )
@@ -51,13 +52,17 @@ class GameManager:
             await self.notify.that_game_is_on(peer_id=update.peer_id)
             return
 
+        await self.notify.about_starting_of_game(peer_id=update.peer_id)
+        await self.waiting_players(update)
+
+    async def waiting_players(self, update: Update) -> None:
+        """стадия определения игроков"""
+
+        await self.notify.about_waiting_of_players(peer_id=update.peer_id)
+
         game = await self.app.store.game.get_or_create_game(
             chat_id=update.peer_id
         )
-
-        await self.notify.about_starting_of_game(peer_id=update.peer_id)
-        # TODO следующее перенести в отд.метод waiting_of_players
-        await self.notify.about_waiting_of_players(peer_id=update.peer_id)
         await self.app.store.game.change_game_state(game.id, "waiting_players")
 
         await asleep(15)
