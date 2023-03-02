@@ -155,5 +155,14 @@ class GameAccessor(BaseAccessor):
 
     async def get_active_players(self, game_id: int) -> list[PlayerModel]:
         """возвращает список активных игроков с переданным id игры"""
-        # TODO
-        raise NotImplementedError
+
+        async with self.app.database.session() as session:
+            async with session.begin():
+                q = (
+                    select(PlayerModel)
+                    .filter_by(game_id=game_id, is_active=True)
+                )
+                result = await session.execute(q)
+                players = result.scalars().all()
+
+        return players

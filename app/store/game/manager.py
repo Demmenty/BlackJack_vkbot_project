@@ -40,6 +40,7 @@ class GameManager:
 
     async def start_new_game(self, update: Update) -> None:
         """начало новой игры"""
+        # TODO варианты: тем же составом, другим составом, совсем заново
 
         # TODO кнопка отказа, чтобы не ждать: сделать админом > получить участников чата > сравнить
 
@@ -55,6 +56,7 @@ class GameManager:
         )
 
         await self.notify.about_starting_of_game(peer_id=update.peer_id)
+        # TODO следующее перенести в отд.метод waiting_of_players
         await self.notify.about_waiting_of_players(peer_id=update.peer_id)
         await self.app.store.game.change_game_state(game.id, "waiting_players")
 
