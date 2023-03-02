@@ -47,7 +47,9 @@ class BotManager:
         )
         await self.app.store.vk_api.send_message(msg)
 
-        game_is_on = await self.app.store.game.is_game_on(chat_id=update.peer_id)
+        game_is_on = await self.app.store.game.is_game_on(
+            chat_id=update.peer_id
+        )
 
         if not game_is_on:
             await self.app.store.game_manager.offer_game(update)
@@ -57,9 +59,11 @@ class BotManager:
 
         update_txt = self._cleaned_update_text(update.text)
 
+        # TODO все возможные команды вынести в ЕНАМ в одно место, см.worknote
         game_handlers = {
             "начать игру": self.app.store.game_manager.start_new_game,
             "правила игры": self.app.store.game_manager.send_game_rules,
+            "остановить игру": self.app.store.game_manager.cancel_game,
             "отменить игру": self.app.store.game_manager.cancel_game,
             "я играю!": self.app.store.game_manager.register_player,
             "": self.app.store.game_manager.offer_game,

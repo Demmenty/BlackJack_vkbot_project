@@ -1,2 +1,2 @@
-class GameTrigger():
+class GameTrigger:
     ...

@@ -4,4 +4,4 @@
 
 
 # def setup_routes(app: "Application"):
-    # app.router.add_view("/game.smth", SomeView)
+# app.router.add_view("/game.smth", SomeView)

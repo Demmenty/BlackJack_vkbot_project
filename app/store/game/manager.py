@@ -22,85 +22,134 @@ class GameManager:
         """отправляет в беседу предложение поиграть"""
 
         # TODO проверка, если в беседе уже была игра -> статистика
-        game_is_on = await self.app.store.game.is_game_on(chat_id=update.peer_id)
+        game_is_on = await self.app.store.game.is_game_on(
+            chat_id=update.peer_id
+        )
 
         if not game_is_on:
             msg = BotMessage(
                 peer_id=update.peer_id,
                 text=GamePhrase.game_offer,
-                keyboard=Keyboard(buttons=[[GameButton.start, GameButton.rules]]).json,
+                keyboard=Keyboard(
+                    buttons=[[GameButton.start, GameButton.rules]]
+                ).json,
             )
             await self.app.store.vk_api.send_message(msg)
 
     async def start_new_game(self, update: Update) -> None:
         """начало новой игры"""
 
-        # проверяем, идет ли уже игра в этом чате
-        game_is_on = await self.app.store.game.is_game_on(chat_id=update.peer_id)
-        # если идет, отправляем соотв.сообщение
+        # TODO кнопка отказа, чтобы не ждать: сделать админом > получить участников чата > сравнить
+
+        game_is_on = await self.app.store.game.is_game_on(
+            chat_id=update.peer_id
+        )
         if game_is_on:
-            msg = BotMessage(
-                peer_id=update.peer_id,
-                text=GamePhrase.game_is_on,
-            )
-            await self.app.store.vk_api.send_message(msg)
+            await self._notify_that_game_is_on(peer_id=update.peer_id)
             return
-        # если не идет - получаем ее модель
-        game = await self.app.store.game.get_or_create_game(chat_id=update.peer_id)
-        # информируем чат, что игра пошла
+
+        game = await self.app.store.game.get_or_create_game(
+            chat_id=update.peer_id
+        )
+
+        await self._notify_about_starting_of_game(peer_id=update.peer_id)
+        await self._notify_about_waiting_of_players(peer_id=update.peer_id)
+        await self.app.store.game.change_game_state(game.id, "waiting_players")
+
+        await asleep(15)
+
+        players = await self.app.store.game.get_all_players(game_id=game.id)
+
+        if not players:
+            await self.cancel_game(update)
+            await self._notify_about_no_players(peer_id=update.peer_id)
+            return
+
+        await self.manage_betting(game.id, players)
+
+    # TODO сделать отдельный класс GameNotification...
+    async def _notify_that_game_is_on(self, peer_id: int) -> None:
+        """уведомляет чат о том, что игра уже идет"""
+
         msg = BotMessage(
-            peer_id=update.peer_id,
+            peer_id=peer_id,
+            text=GamePhrase.game_is_on,
+        )
+        await self.app.store.vk_api.send_message(msg)
+
+    async def _notify_that_game_is_off(self, peer_id: int) -> None:
+        """уведомляет чат о том, что игра сейчас не идет"""
+
+        msg = BotMessage(
+            peer_id=peer_id,
+            text=GamePhrase.game_is_off,
+        )
+        await self.app.store.vk_api.send_message(msg)
+
+    async def _notify_that_game_aborted(self, peer_id: int) -> None:
+        """уведомляет чат о том, что игра отменена"""
+
+        msg = BotMessage(
+            peer_id=peer_id,
+            text=GamePhrase.game_abort,
+        )
+        await self.app.store.vk_api.send_message(msg)
+
+    async def _notify_about_starting_of_game(self, peer_id: int) -> None:
+        """уведомляет чат о начале игры"""
+
+        msg = BotMessage(
+            peer_id=peer_id,
             text=GamePhrase.game_begun,
         )
         await self.app.store.vk_api.send_message(msg)
 
-        # TODO кнопка отказа, чтобы не ждать:
-        # просьба сделать админом -> получить участников беседы -> сравнить
+    async def _notify_about_waiting_of_players(self, peer_id: int) -> None:
+        """уведомляет чат о начале набора игроков"""
 
-        # информируем чат о наборе игроков
         msg = BotMessage(
-            peer_id=update.peer_id,
+            peer_id=peer_id,
             text=GamePhrase.wait_players,
-            keyboard=Keyboard(buttons=[[GameButton.acceptgame, GameButton.abort]]).json,
+            keyboard=Keyboard(
+                buttons=[[GameButton.acceptgame, GameButton.abort]]
+            ).json,
         )
         await self.app.store.vk_api.send_message(msg)
-        # переводим игру в следующее состояние
-        await self.app.store.game.change_game_state(game.id, "define_players")
-        # ждем 15 секунд
-        await asleep(15)
-        # чекаем игроков, успевших зарегаться на игру
-        players = await self.app.store.game.get_all_players(game_id=game.id)
-        # проверяем, что есть хотя бы один
-        if not players:
-            await self.app.store.game.change_game_state(game.id, "inactive")
-            msg = BotMessage(
-                peer_id=update.peer_id,
-                text=GamePhrase.no_players,
-            )
-            await self.app.store.vk_api.send_message(msg)
-            return
-        # передаем управление обработчику следующей стадии
-        await self.manage_betting(game.id, players)
-        
-    async def register_player(self, update: Update) -> None:
-        """регистрируем пользователя в игре"""
 
-        # статус игры должен быть "define_players"
-        # проверяем, идет ли вообще игра в этом чате
-        game_is_on = await self.app.store.game.is_game_on(chat_id=update.peer_id)
+    async def _notify_about_no_players(self, peer_id: int) -> None:
+        """уведомляет чат о том, что они петухи"""
+
+        msg = BotMessage(
+            peer_id=peer_id,
+            text=GamePhrase.no_players,
+        )
+        await self.app.store.vk_api.send_message(msg)
+
+    async def register_player(self, update: Update) -> None:
+        """регистрирует пользователя в качестве игрока"""
+
+        game_is_on = await self.app.store.game.is_game_on(
+            chat_id=update.peer_id
+        )
         if not game_is_on:
             # TODO подумать над отправкой сообщения
             return
-        
-        game = self.app.store.game.get_or_create_game(chat_id=update.peer_id)
+
+        game = await self.app.store.game.get_or_create_game(
+            chat_id=update.peer_id
+        )
         # TODO убрать магические стринги, сделать нормально. но потом.
-        if game.state != "define_players":
+        if game.state != "waiting_players":
             # TODO подумать над отправкой сообщения
             return
-        
-        # создаем игрока в базе
-        vk_user = await self.app.store.game.get_or_create_vk_user(vk_user_id=update.from_id)
-        player = await self.app.store.game.create_player(vk_user=vk_user, game=game)
+
+        # TODO отрегулировать, чтобы один и тот же не создавался
+        vk_user = await self.app.store.game.get_or_create_vk_user(
+            vk_user_id=update.from_id
+        )
+        player = await self.app.store.game.create_player(
+            vk_user=vk_user, game=game
+        )
 
         # TODO проверить на работоспособность после слияния!
         msg = BotMessage(
@@ -108,12 +157,12 @@ class GameManager:
             text=vk_user.name + GamePhrase.player_registered,
         )
         await self.app.store.vk_api.send_message(msg)
-    
+
     async def manage_betting(self, game_id: int, players: list) -> None:
         """стадия ставок"""
 
         # TODO раздать всем деняк
-        
+
         raise NotImplementedError
 
     async def send_game_rules(self, update: Update) -> None:
@@ -129,32 +178,21 @@ class GameManager:
         await self.app.store.vk_api.send_message(msg)
 
     async def cancel_game(self, update: Update) -> None:
-        """заканчивает активную игру в чате переданного update"""
-        # TODO убрать магические стринги и сделать чисто (потом, пока так)
-        # TODO проработать все варианты в зависимости от state
+        """останавливает игру"""
 
-        game = await self.app.store.game.get_game_by_chat(chat_id=update.peer_id)
+        # TODO убрать магические стринги и cтейты вынести в енам (потом, пока так)
+        # TODO проработать остальные варианты в зависимости от state (вывести результаты)
+        # TODO подумать над резделением методов на abort и end
 
-        if not game:
-            msg = BotMessage(
-                peer_id=update.peer_id,
-                text=GamePhrase.game_is_off,
-            )
-            await self.app.store.vk_api.send_message(msg)
+        game = await self.app.store.game.get_game_by_chat(
+            chat_id=update.peer_id
+        )
+        # чекнуть, что так не ломается если game is None
+        if not game or game.state == "inactive":
+            await self._notify_that_game_is_off(peer_id=update.peer_id)
             return
 
-        if game.state == "inactive":
-            msg = BotMessage(
-                peer_id=update.peer_id,
-                text=GamePhrase.game_is_off,
-            )
-            await self.app.store.vk_api.send_message(msg)
-            return
-
-        if game.state == "define_players":
+        if game.state == "waiting_players":
+            # TODO удалить игроков
             await self.app.store.game.change_game_state(game.id, "inactive")
-            msg = BotMessage(
-                peer_id=update.peer_id,
-                text=GamePhrase.game_abort,
-            )
-            await self.app.store.vk_api.send_message(msg)
+            await self._notify_that_game_aborted(peer_id=update.peer_id)

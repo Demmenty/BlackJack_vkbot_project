@@ -1,11 +1,8 @@
 from sqlalchemy import select, update
 
 from app.base.base_accessor import BaseAccessor
-from app.game.models import ChatModel, GameModel
-from app.game.models import PlayerModel
+from app.game.models import ChatModel, GameModel, PlayerModel, VKUserModel
 
-
-from app.game.models import VKUserModel
 
 class GameAccessor(BaseAccessor):
     """взаимосвязь gamemanager и database"""
@@ -21,8 +18,10 @@ class GameAccessor(BaseAccessor):
                 vk_user = result.scalars().first()
 
                 if not vk_user:
-                    name = await self.app.store.vk_api.get_username(user_id=vk_user_id)
-                    vk_user = VKUserModel(vk_peer_id=vk_user_id, name=name)
+                    name = await self.app.store.vk_api.get_username(
+                        user_id=vk_user_id
+                    )
+                    vk_user = VKUserModel(vk_user_id=vk_user_id, name=name)
                     session.add(vk_user)
                     await session.commit()
 
@@ -33,17 +32,22 @@ class GameAccessor(BaseAccessor):
 
         async with self.app.database.session() as session:
             async with session.begin():
-                q = select(VKUserModel.name).join_from(VKUserModel, PlayerModel).filter_by(id=player_id)
+                q = (
+                    select(VKUserModel.name)
+                    .join_from(VKUserModel, PlayerModel)
+                    .filter_by(id=player_id)
+                )
                 result = await session.execute(q)
                 name = result.scalars().first()
 
         return name
-    
 
-    async def create_player(self, vk_user: VKUserModel, game: GameModel) -> PlayerModel:
+    async def create_player(
+        self, vk_user: VKUserModel, game: GameModel
+    ) -> PlayerModel:
         """регистрирует пользователя в качестве игрока, возвращает его модель"""
 
-        # TODO проверить проставляемость айдишки
+        # id выставляется сама по порядку ✔
         async with self.app.database.session() as session:
             async with session.begin():
                 player = PlayerModel(user_id=vk_user.id, game_id=game.id)
@@ -93,10 +97,12 @@ class GameAccessor(BaseAccessor):
 
         async with self.app.database.session() as session:
             async with session.begin():
-                q = select(GameModel).filter(GameModel.chat.has(vk_peer_id=chat_id))
+                q = select(GameModel).filter(
+                    GameModel.chat.has(vk_peer_id=chat_id)
+                )
                 result = await session.execute(q)
                 game = result.scalars().first()
- 
+
         return game
 
     async def is_game_on(self, chat_id: int) -> bool:
@@ -105,25 +111,24 @@ class GameAccessor(BaseAccessor):
 
         game = await self.get_game_by_chat(chat_id=chat_id)
 
-        if not game:
-            return False
+        # TODO cтейты вынести в енам! -> (game.state != State.INACTIVE)
+        result = game and game.state != "inactive"
 
-        # TODO убрать магические стринги
-        if game.state == "inactive":
-            return False
-
-        return True
+        return result
 
     async def change_game_state(self, game_id: int, new_state: str) -> None:
         """смена статуса игры"""
 
         async with self.app.database.session() as session:
             async with session.begin():
-                q = update(GameModel).filter_by(id=game_id).values(state=new_state)
+                q = (
+                    update(GameModel)
+                    .filter_by(id=game_id)
+                    .values(state=new_state)
+                )
                 await session.execute(q)
 
-    async def get_all_players(self, game_id:int) -> list[PlayerModel]:
+    async def get_all_players(self, game_id: int) -> list[PlayerModel]:
         """возвращает список моделей игроков с переданным id игры"""
         # TODO
         raise NotImplementedError
-

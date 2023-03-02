@@ -1,4 +1,4 @@
-from ..vk_api.dataclasses import Button, Action
+from ..vk_api.dataclasses import Action, Button
 
 
 class GameButton:
