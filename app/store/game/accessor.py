@@ -158,9 +158,8 @@ class GameAccessor(BaseAccessor):
 
         async with self.app.database.session() as session:
             async with session.begin():
-                q = (
-                    select(PlayerModel)
-                    .filter_by(game_id=game_id, is_active=True)
+                q = select(PlayerModel).filter_by(
+                    game_id=game_id, is_active=True
                 )
                 result = await session.execute(q)
                 players = result.scalars().all()
