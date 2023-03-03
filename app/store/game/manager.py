@@ -2,6 +2,7 @@ import typing
 from asyncio import create_task, sleep as asleep
 from logging import getLogger
 
+from app.game.models import PlayerModel
 from app.store.vk_api.dataclasses import BotMessage, Keyboard, Update
 
 from .buttons import GameButton
@@ -72,6 +73,7 @@ class GameManager:
         await self.notifier.waiting_players(peer_id=update.peer_id)
 
         create_task(self.waiting_players(game.id, update))
+        # TODO организовать какой-то там коллбек
 
     async def waiting_players(self, game_id: int, update: Update) -> None:
         """ждет, пока отметятся игроки, собирает их и направляет на стадию ставок"""
@@ -154,6 +156,7 @@ class GameManager:
         game = await self.app.store.game.get_or_create_game(
             chat_id=update.peer_id
         )
+        # TODO выйти из игры во время ставок
         if not game or game.state != "define_players":
             return
 
@@ -171,10 +174,56 @@ class GameManager:
             peer_id=update.peer_id, username=vk_user.name
         )
 
-    async def manage_betting(self, game_id: int, players: list) -> None:
-        """стадия ставок"""
+    async def accept_bet(self, update: Update) -> None:
+        """проверяет и регистрирует ставку игрока"""
+        # TODO декоратор на проверку нужной стадии
+        game_is_on = await self.app.store.game.is_game_on(
+            chat_id=update.peer_id
+        )
+        if not game_is_on:
+            await self.notifier.game_is_off(peer_id=update.peer_id)
+            return
 
-        raise NotImplementedError
+        game = await self.app.store.game.get_or_create_game(
+            chat_id=update.peer_id
+        )
+
+        if game.state != "betting":
+            return
+
+        player = await self.app.store.game.get_player(
+            vk_user_id=update.from_id, game_id=game.id
+        )
+        if not player:
+            return
+
+        bet = int(update.text)
+        username = await self.app.store.game.get_player_name(player.id)
+
+        if bet == 0:
+            await self.notifier.zero_bet(
+                peer_id=update.peer_id, username=username
+            )
+            return
+
+        if player.bet is not None:
+            await self.notifier.bet_accepted_already(
+                peer_id=update.peer_id, username=username, bet=player.bet
+            )
+            return
+
+        if bet > player.cash:
+            await self.notifier.to_much_bet(
+                peer_id=update.peer_id, username=username
+            )
+            return
+
+        await self.app.store.game.change_player_bet(
+            player_id=player.id, new_bet=bet
+        )
+        await self.notifier.bet_accepted(
+            peer_id=update.peer_id, username=username, bet=bet
+        )
 
     async def send_game_rules(self, update: Update) -> None:
         """описание правил игры"""
