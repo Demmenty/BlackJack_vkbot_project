@@ -14,3 +14,4 @@ class GameButton:
     casino = Button(
         color="negative", action=Action(label="Ебаный рот этого казино!")
     )
+    all_in = Button(action=Action(label="Ва-банк!"))
