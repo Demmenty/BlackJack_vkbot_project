@@ -10,6 +10,7 @@ class ChatModel(db):
     id = Column(Integer, primary_key=True)
     vk_peer_id = Column(Integer, unique=True, nullable=False)
 
+    # один_чат = одна_игра
     game = relationship(
         "GameModel",
         back_populates="chat",
@@ -22,6 +23,7 @@ class ChatModel(db):
 
 
 # TODO ограничить варианты state: inactive, define_players, betting, ...
+# TODO загуглить, почему у меня связь отображается не как 1-1 и исправить
 class GameModel(db):
     __tablename__ = "game"
 
@@ -35,7 +37,7 @@ class GameModel(db):
         cascade="all, delete",
         passive_deletes=True,
     )
-    player = relationship(
+    players = relationship(
         "PlayerModel",
         back_populates="game",
         cascade="all, delete",
@@ -52,9 +54,12 @@ class PlayerModel(db):
     id = Column(Integer, primary_key=True)
     user_id = Column(ForeignKey("vk_user.id"), nullable=False)
     game_id = Column(ForeignKey("game.id", ondelete="CASCADE"), nullable=False)
+    cash = Column(Integer, default=1000, nullable=False)
+    bet = Column(Integer, nullable=True)
+    is_active = Column(Boolean, default=True, nullable=False)
 
-    game = relationship("GameModel", back_populates="player")
-    vk_user = relationship("VKUserModel", back_populates="player")
+    game = relationship("GameModel", back_populates="players")
+    vk_user = relationship("VKUserModel", back_populates="players")
 
     def __repr__(self):
         return f"PlayerModel(id={self.id!r})"
@@ -67,7 +72,7 @@ class VKUserModel(db):
     vk_user_id = Column(Integer, nullable=False)
     name = Column(String, nullable=False)
 
-    player = relationship("PlayerModel", back_populates="vk_user")
+    players = relationship("PlayerModel", back_populates="vk_user")
 
     def __repr__(self):
         return f"VKUserModel(id={self.id!r}, name={self.name!r})"

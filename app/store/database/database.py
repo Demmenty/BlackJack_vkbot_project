@@ -1,7 +1,10 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Any
 
-from sqlalchemy.ext.asyncio import (AsyncEngine, AsyncSession,
-                                    create_async_engine)
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    create_async_engine,
+)
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 from app.store.database import db
@@ -17,8 +20,7 @@ class Database:
         self._db: Optional[declarative_base] = None
         self.session: Optional[AsyncSession] = None
 
-    async def connect(self, *_: list, **__: dict) -> None:
-
+    async def connect(self, *_: list[Any], **__: dict[Any]) -> None:
         self._db = db
 
         url = (
@@ -46,6 +48,5 @@ class Database:
         )
 
     async def disconnect(self, *_: list, **__: dict) -> None:
-
         if self._engine:
             await self._engine.dispose()

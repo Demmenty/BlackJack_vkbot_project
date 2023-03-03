@@ -143,4 +143,3 @@ class VkApiAccessor(BaseAccessor):
 
         username = data["response"][0]["first_name"]
         return username
-    

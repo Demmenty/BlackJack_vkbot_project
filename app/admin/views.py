@@ -9,11 +9,12 @@ from app.web.utils import json_response
 
 
 class AdminLoginView(View):
-    @docs(tags=["admin"], summary="Admin login", description="Admin authorization")
+    @docs(
+        tags=["admin"], summary="Admin login", description="Admin authorization"
+    )
     @request_schema(AdminLoginSchema)
     @response_schema(AdminCurrentSchema, 200)
     async def post(self):
-
         request_email = self.request["data"]["email"]
         request_password = self.request["data"]["password"]
 
@@ -44,7 +45,6 @@ class AdminCurrentView(AuthRequiredMixin, View):
     )
     @response_schema(AdminCurrentSchema, 200)
     async def get(self):
-
         session = await get_session(self.request)
         request_email = session["admin"]["email"]
         admin = await self.request.app.store.admin.get_by_email(request_email)

@@ -8,7 +8,6 @@ from app.base.base_accessor import BaseAccessor
 
 class AdminAccessor(BaseAccessor):
     async def get_by_email(self, email: str) -> AdminModel | None:
-
         async with self.app.database.session() as session:
             async with session.begin():
                 q = select(AdminModel).filter_by(email=email)
@@ -18,7 +17,6 @@ class AdminAccessor(BaseAccessor):
                 return admin
 
     async def create_admin(self, email: str, password: str) -> None:
-
         async with self.app.database.session() as session:
             async with session.begin():
                 # ищем админа

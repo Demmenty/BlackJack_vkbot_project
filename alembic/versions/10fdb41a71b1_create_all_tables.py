@@ -1,16 +1,16 @@
-"""create empty base with admin, chat, game, player, vk_user models
+"""create all tables
 
-Revision ID: 7c8794918ef9
+Revision ID: 10fdb41a71b1
 Revises: 
-Create Date: 2023-03-01 02:08:21.908276
+Create Date: 2023-03-02 02:20:49.637540
 
 """
-from alembic import op
 import sqlalchemy as sa
 
+from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = '7c8794918ef9'
+revision = '10fdb41a71b1'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -48,7 +48,7 @@ def upgrade() -> None:
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('game_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['game_id'], ['game.id'], ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['user_id'], ['vk_user.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['user_id'], ['vk_user.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     # ### end Alembic commands ###
