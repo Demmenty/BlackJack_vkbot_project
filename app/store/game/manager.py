@@ -87,7 +87,7 @@ class GameManager:
             await self.notify.about_no_players(peer_id=update.peer_id)
             return
 
-        players_names = [
+        players_names: list[str] = [
             await self.app.store.game.get_player_name(player.id)
             for player in players
         ]
