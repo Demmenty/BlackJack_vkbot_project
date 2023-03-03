@@ -121,7 +121,15 @@ class GameManager:
             vk_user=vk_user, game=game
         )
 
-        # TODO подумать, можно ли это лучше написать
+        if player.cash == 0:
+            await self.app.store.game.change_player_state(
+                player_id=player.id, is_active=False
+            )
+            await self.notifier.no_cash(
+                peer_id=update.peer_id, username=vk_user.name
+            )
+            return
+
         if player_created:
             await self.notifier.player_registered(
                 peer_id=update.peer_id, username=vk_user.name
