@@ -113,6 +113,7 @@ class GameManager:
             # TODO подумать над отправкой сообщения
             return
 
+        # TODO сделать как транзакции
         vk_user = await self.app.store.game.get_or_create_vk_user(
             vk_user_id=update.from_id
         )
@@ -141,12 +142,14 @@ class GameManager:
         """отмечает игрока как неактивного"""
         # TODO вынести cтейты в енам, да-да
 
+        # TODO декоратор с подстановкой нужной стадии типа @game_state(state)
         game = await self.app.store.game.get_or_create_game(
             chat_id=update.peer_id
         )
         if not game or game.state != "define_players":
             return
 
+        # TODO сделать следующее как транзакция (вся функция)
         vk_user = await self.app.store.game.get_or_create_vk_user(
             vk_user_id=update.from_id
         )
