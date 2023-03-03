@@ -1,5 +1,3 @@
-from typing import Tuple
-
 from sqlalchemy import select, update
 
 from app.base.base_accessor import BaseAccessor
@@ -46,7 +44,7 @@ class GameAccessor(BaseAccessor):
 
     async def get_or_create_player(
         self, vk_user: VKUserModel, game: GameModel
-    ) -> Tuple[PlayerModel, bool]:
+    ) -> tuple[PlayerModel, bool]:
         """регистрирует пользователя в качестве игрока,
         возвращает кортеж: его модель и предикат is_created"""
 
