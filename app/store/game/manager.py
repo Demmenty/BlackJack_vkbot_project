@@ -92,7 +92,7 @@ class GameManager:
         await self.notifier.active_players(
             peer_id=update.peer_id, names=players_names
         )
-        await self.manage_betting(game_id, players)
+        await self.manage_betting(update.peer_id, game_id, players)
 
     async def register_player(self, update: Update) -> None:
         """регистрирует пользователя в качестве игрока"""
@@ -201,8 +201,16 @@ class GameManager:
             await self.notifier.game_is_off(peer_id=update.peer_id)
             return
 
-        if game.state == "define_players":
-            # TODO убрать игроков
+        if game.state == "define_players" or game.state == "betting":
+            players = await self.app.store.game.get_active_players(game.id)
+            for player in players:
+                await self.app.store.game.change_player_state(
+                    player_id=player.id, is_active=False
+                )
+                await self.app.store.game.change_player_bet(
+                    player_id=player.id, new_bet=None
+                )
+
             await self.app.store.game.change_game_state(game.id, "inactive")
             await self.notifier.game_aborted(peer_id=update.peer_id)
 
