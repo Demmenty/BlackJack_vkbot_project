@@ -174,6 +174,40 @@ class GameManager:
             peer_id=update.peer_id, username=vk_user.name
         )
 
+    async def manage_betting(
+        self, peer_id: int, game_id: int, players: list
+    ) -> None:
+        """стадия ставок"""
+
+        await self.app.store.game.change_game_state(game_id, "betting")
+        await self.notifier.wait_bets(peer_id=peer_id)
+
+        create_task(self.waiting_bets(peer_id, game_id, players))
+        # TODO организовать какой-то там коллбек
+
+    async def waiting_bets(
+        self, peer_id: int, game_id: int, players: list[PlayerModel]
+    ) -> None:
+        """ждет, пока игроки не сделают ставки и направляет на след. стадию"""
+
+        await asleep(30)
+
+        players = await self.app.store.game.get_active_players(game_id)
+        # TODO if not players ...
+
+        bets_are_made = True
+        for player in players:
+            if player.bet is None:
+                bets_are_made = False
+                username = await self.app.store.game.get_player_name(player.id)
+                await self.notifier.no_bet(peer_id, username)
+
+        if not bets_are_made:
+            create_task(self.waiting_bets(peer_id, game_id, players))
+            return
+
+        await self.manage_dealing(peer_id, game_id, players)
+
     async def accept_bet(self, update: Update) -> None:
         """проверяет и регистрирует ставку игрока"""
         # TODO декоратор на проверку нужной стадии
