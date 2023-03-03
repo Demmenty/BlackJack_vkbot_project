@@ -10,7 +10,7 @@ if typing.TYPE_CHECKING:
 
 
 class GameNotifier:
-    """уведомления в чат игры"""
+    """посылает уведомления в чат игры"""
 
     def __init__(self, app: "Application"):
         self.app = app
@@ -60,7 +60,7 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
-    async def player_registered(self, peer_id: int, username: int) -> None:
+    async def player_registered(self, peer_id: int, username: str) -> None:
         """уведомляет чат о регистрации игрока (передать его имя)"""
         msg = BotMessage(
             peer_id=peer_id,
@@ -68,7 +68,7 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
-    async def player_unregistered(self, peer_id: int, username: int) -> None:
+    async def player_unregistered(self, peer_id: int, username: str) -> None:
         """уведомляет чат о том, что игрок не участвует (передать его имя)"""
         msg = BotMessage(
             peer_id=peer_id,
@@ -87,6 +87,22 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
+    async def no_cash(self, peer_id: int, username: str) -> None:
+        """уведомляет игрока, что он не может играть без денег"""
+
+        msg = BotMessage(
+            peer_id=peer_id,
+            text=username + GamePhrase.no_cash,
+            keyboard=Keyboard(
+                buttons=[
+                    [
+                        GameButton.casino,
+                    ]
+                ]
+            ).json,
+        )
+        await self.app.store.vk_api.send_message(msg)
+
     async def no_players(self, peer_id: int) -> None:
         """уведомляет чат о том, что они петухи"""
 
@@ -102,6 +118,79 @@ class GameNotifier:
         msg = BotMessage(
             peer_id=peer_id,
             text=GamePhrase.active_players + ", ".join(names),
+        )
+        await self.app.store.vk_api.send_message(msg)
+
+    async def wait_bets(self, peer_id: int) -> None:
+        """уведомляет чат о начале приема ставок"""
+
+        msg = BotMessage(
+            peer_id=peer_id,
+            text=GamePhrase.wait_bets,
+            keyboard=Keyboard(
+                buttons=[
+                    [
+                        GameButton.show_cash,
+                    ]
+                ]
+            ).json,
+        )
+        await self.app.store.vk_api.send_message(msg)
+
+    async def to_much_bet(self, peer_id: int, username: str) -> None:
+        """уведомляет игрока, что он поставил больше, чем его баланс"""
+
+        msg = BotMessage(
+            peer_id=peer_id,
+            text=GamePhrase.to_much_bet + username,
+        )
+        await self.app.store.vk_api.send_message(msg)
+
+    async def zero_bet(self, peer_id: int, username: str) -> None:
+        """уведомляет игрока, что он нельзя ставить ноль"""
+
+        msg = BotMessage(
+            peer_id=peer_id,
+            text=GamePhrase.zero_bet + username,
+        )
+        await self.app.store.vk_api.send_message(msg)
+
+    async def no_bet(self, peer_id: int, username: str) -> None:
+        """уведомляет игрока, что он не сделал ставку,
+        высылает предложение отправить или отказаться от участия"""
+
+        msg = BotMessage(
+            peer_id=peer_id,
+            text=username + GamePhrase.no_bet,
+            keyboard=Keyboard(
+                buttons=[
+                    [
+                        GameButton.unregister,
+                        GameButton.abort,
+                    ]
+                ]
+            ).json,
+        )
+        await self.app.store.vk_api.send_message(msg)
+
+
+    async def bet_accepted(self, peer_id: int, username: str, bet: int) -> None:
+        """уведомляет игрока, что его ставка принята"""
+
+        msg = BotMessage(
+            peer_id=peer_id,
+            text=username + GamePhrase.bet_accepted + str(bet),
+        )
+        await self.app.store.vk_api.send_message(msg)
+
+    async def bet_accepted_already(
+        self, peer_id: int, username: str, bet: int
+    ) -> None:
+        """уведомляет игрока, что его ставка принята"""
+
+        msg = BotMessage(
+            peer_id=peer_id,
+            text=username + GamePhrase.bet_accepted_already + str(bet),
         )
         await self.app.store.vk_api.send_message(msg)
 
