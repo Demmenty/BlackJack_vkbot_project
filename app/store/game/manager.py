@@ -1,5 +1,5 @@
 import typing
-from asyncio import sleep as asleep
+from asyncio import create_task, sleep as asleep
 from logging import getLogger
 
 from app.store.vk_api.dataclasses import BotMessage, Keyboard, Update
@@ -39,10 +39,10 @@ class GameManager:
             await self.app.store.vk_api.send_message(msg)
 
     async def start_new_game(self, update: Update) -> None:
-        """начало новой игры"""
-        # TODO варианты: тем же составом, другим составом, совсем заново
-
-        # TODO кнопка отказа, чтобы не ждать: сделать админом > получить участников чата > сравнить
+        """обработка запроса на старт игры"""
+        # TODO проверка наличия last_game
+        # TODO нет last_game > вариант "другим составом"
+        # TODO если last_game > предложить 3 варианта
 
         # TODO сделать эту проверку декоратором, наверное
         game_is_on = await self.app.store.game.is_game_on(
@@ -53,24 +53,34 @@ class GameManager:
             return
 
         await self.notify.about_starting_of_game(peer_id=update.peer_id)
-        await self.waiting_players(update)
 
-    async def waiting_players(self, update: Update) -> None:
-        """стадия определения игроков"""
+        # TODO варианты:
+        # "тем же составом" > define направляет в betting без waiting
+        # "другим составом" > все игроки inactive > стадия define
+        # "совсем заново" > все игроки inactive и cash изначальный > стадия define
 
-        await self.notify.about_waiting_of_players(peer_id=update.peer_id)
+        await self.define_players(update)
+
+    async def define_players(self, update: Update) -> None:
+        """стадия определения игроков раунда"""
 
         game = await self.app.store.game.get_or_create_game(
             chat_id=update.peer_id
         )
-        await self.app.store.game.change_game_state(game.id, "waiting_players")
+        await self.app.store.game.change_game_state(game.id, "define_players")
+
+        await self.notify.about_waiting_of_players(peer_id=update.peer_id)
+
+        create_task(self.waiting_players(game.id, update))
+
+    async def waiting_players(
+        self, game_id: int, update: Update
+    ) -> None:
+        """ждет, пока отметятся игроки, собирает их и направляет на стадию ставок"""
 
         await asleep(15)
-        # FIXME а всмысле апдейты не присылаются во время таймера?
-        # можно регистрировать timestampы и считать от них,
-        # но может, я не замечаю чего-то очевидного?..
 
-        players = await self.app.store.game.get_active_players(game_id=game.id)
+        players = await self.app.store.game.get_active_players(game_id=game_id)
 
         if not players:
             await self.abort_game(update)
@@ -84,7 +94,7 @@ class GameManager:
         await self.notify.about_active_players(
             peer_id=update.peer_id, names=players_names
         )
-        await self.manage_betting(game.id, players)
+        await self.manage_betting(game_id, players)
 
     async def register_player(self, update: Update) -> None:
         """регистрирует пользователя в качестве игрока"""
@@ -101,7 +111,7 @@ class GameManager:
             chat_id=update.peer_id
         )
         # TODO убрать магические стринги, сделать нормально. но потом.
-        if game.state != "waiting_players":
+        if game.state != "define_players":
             # TODO подумать над отправкой сообщения
             return
 
@@ -136,7 +146,7 @@ class GameManager:
         game = await self.app.store.game.get_or_create_game(
             chat_id=update.peer_id
         )
-        if not game or game.state != "waiting_players":
+        if not game or game.state != "define_players":
             return
 
         vk_user = await self.app.store.game.get_or_create_vk_user(
@@ -181,7 +191,7 @@ class GameManager:
             await self.notify.that_game_is_off(peer_id=update.peer_id)
             return
 
-        if game.state == "waiting_players":
+        if game.state == "define_players":
             # TODO убрать игроков
             await self.app.store.game.change_game_state(game.id, "inactive")
             await self.notify.that_game_aborted(peer_id=update.peer_id)

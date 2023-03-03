@@ -22,7 +22,7 @@ class ChatModel(db):
         return f"ChatModel(id={self.id!r}, vk_peer_id={self.vk_peer_id!r})"
 
 
-# TODO ограничить варианты state: inactive, waiting_players, betting, ...
+# TODO ограничить варианты state: inactive, define_players, betting, ...
 # TODO загуглить, почему у меня связь отображается не как 1-1 и исправить
 class GameModel(db):
     __tablename__ = "game"
