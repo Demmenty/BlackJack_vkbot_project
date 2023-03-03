@@ -49,10 +49,10 @@ class GameManager:
             chat_id=update.peer_id
         )
         if game_is_on:
-            await self.notifier.that_game_is_on(peer_id=update.peer_id)
+            await self.notifier.game_is_on(peer_id=update.peer_id)
             return
 
-        await self.notifier.about_starting_of_game(peer_id=update.peer_id)
+        await self.notifier.game_starting(peer_id=update.peer_id)
 
         # TODO варианты:
         # "тем же составом" > define направляет в betting без waiting
@@ -69,7 +69,7 @@ class GameManager:
         )
         await self.app.store.game.change_game_state(game.id, "define_players")
 
-        await self.notifier.about_waiting_of_players(peer_id=update.peer_id)
+        await self.notifier.waiting_players(peer_id=update.peer_id)
 
         create_task(self.waiting_players(game.id, update))
 
@@ -82,14 +82,14 @@ class GameManager:
 
         if not players:
             await self.abort_game(update)
-            await self.notifier.about_no_players(peer_id=update.peer_id)
+            await self.notifier.no_players(peer_id=update.peer_id)
             return
 
         players_names: list[str] = [
             await self.app.store.game.get_player_name(player.id)
             for player in players
         ]
-        await self.notifier.about_active_players(
+        await self.notifier.active_players(
             peer_id=update.peer_id, names=players_names
         )
         await self.manage_betting(game_id, players)
@@ -102,7 +102,7 @@ class GameManager:
             chat_id=update.peer_id
         )
         if not game_is_on:
-            await self.notifier.that_game_is_off(peer_id=update.peer_id)
+            await self.notifier.game_is_off(peer_id=update.peer_id)
             return
 
         game = await self.app.store.game.get_or_create_game(
@@ -122,18 +122,18 @@ class GameManager:
 
         # TODO подумать, можно ли это лучше написать
         if player_created:
-            await self.notifier.that_player_registered(
+            await self.notifier.player_registered(
                 peer_id=update.peer_id, username=vk_user.name
             )
         elif player.is_active:
-            await self.notifier.that_player_registered_already(
+            await self.notifier.player_registered_already(
                 peer_id=update.peer_id, username=vk_user.name
             )
         else:
             await self.app.store.game.change_player_state(
                 player_id=player.id, is_active=True
             )
-            await self.notifier.that_player_registered(
+            await self.notifier.player_registered(
                 peer_id=update.peer_id, username=vk_user.name
             )
 
@@ -156,7 +156,7 @@ class GameManager:
         await self.app.store.game.change_player_state(
             player_id=player.id, is_active=False
         )
-        await self.notifier.that_player_unregistered(
+        await self.notifier.player_unregistered(
             peer_id=update.peer_id, username=vk_user.name
         )
 
@@ -187,13 +187,13 @@ class GameManager:
         )
 
         if not game or game.state == "inactive":
-            await self.notifier.that_game_is_off(peer_id=update.peer_id)
+            await self.notifier.game_is_off(peer_id=update.peer_id)
             return
 
         if game.state == "define_players":
             # TODO убрать игроков
             await self.app.store.game.change_game_state(game.id, "inactive")
-            await self.notifier.that_game_aborted(peer_id=update.peer_id)
+            await self.notifier.game_aborted(peer_id=update.peer_id)
 
     async def cancel_game(self, update: Update) -> None:
         """досрочно останавливает игру"""
@@ -204,7 +204,7 @@ class GameManager:
             chat_id=update.peer_id
         )
         if not game or game.state == "inactive":
-            await self.notifier.that_game_is_off(peer_id=update.peer_id)
+            await self.notifier.game_is_off(peer_id=update.peer_id)
             return
 
         # TODO удалить игроков
@@ -214,6 +214,6 @@ class GameManager:
         causer = await self.app.store.game.get_or_create_vk_user(
             vk_user_id=update.from_id
         )
-        await self.notifier.that_game_canceled(
+        await self.notifier.game_canceled(
             peer_id=update.peer_id, username=causer.name
         )

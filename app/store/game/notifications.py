@@ -15,7 +15,7 @@ class GameNotifier:
     def __init__(self, app: "Application"):
         self.app = app
 
-    async def that_game_is_on(self, peer_id: int) -> None:
+    async def game_is_on(self, peer_id: int) -> None:
         """уведомляет чат о том, что игра уже идет"""
 
         msg = BotMessage(
@@ -24,7 +24,7 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
-    async def that_game_is_off(self, peer_id: int) -> None:
+    async def game_is_off(self, peer_id: int) -> None:
         """уведомляет чат о том, что игра сейчас не идет"""
 
         msg = BotMessage(
@@ -33,26 +33,7 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
-    async def that_game_aborted(self, peer_id: int) -> None:
-        """уведомляет чат о том, что игра отменена (при наборе игроков)"""
-
-        msg = BotMessage(
-            peer_id=peer_id,
-            text=GamePhrase.game_abort,
-        )
-        await self.app.store.vk_api.send_message(msg)
-
-    async def that_game_canceled(self, peer_id: int, username: str) -> None:
-        """уведомляет чат о том, что игра закончена (раньше времени)
-        передать username = имя нажавшего на кнопку остановки"""
-
-        msg = BotMessage(
-            peer_id=peer_id,
-            text=GamePhrase.game_cancel + username,
-        )
-        await self.app.store.vk_api.send_message(msg)
-
-    async def about_starting_of_game(self, peer_id: int) -> None:
+    async def game_starting(self, peer_id: int) -> None:
         """уведомляет чат о начале игры"""
 
         msg = BotMessage(
@@ -61,7 +42,7 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
-    async def about_waiting_of_players(self, peer_id: int) -> None:
+    async def waiting_players(self, peer_id: int) -> None:
         """уведомляет чат о начале набора игроков"""
 
         msg = BotMessage(
@@ -79,7 +60,7 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
-    async def that_player_registered(self, peer_id: int, username: int) -> None:
+    async def player_registered(self, peer_id: int, username: int) -> None:
         """уведомляет чат о регистрации игрока (передать его имя)"""
         msg = BotMessage(
             peer_id=peer_id,
@@ -87,9 +68,7 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
-    async def that_player_unregistered(
-        self, peer_id: int, username: int
-    ) -> None:
+    async def player_unregistered(self, peer_id: int, username: int) -> None:
         """уведомляет чат о том, что игрок не участвует (передать его имя)"""
         msg = BotMessage(
             peer_id=peer_id,
@@ -97,7 +76,7 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
-    async def that_player_registered_already(
+    async def player_registered_already(
         self, peer_id: int, username: int
     ) -> None:
         """уведомляет чат, что игрок уже зарегистрирован (передать имя)"""
@@ -108,7 +87,7 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
-    async def about_no_players(self, peer_id: int) -> None:
+    async def no_players(self, peer_id: int) -> None:
         """уведомляет чат о том, что они петухи"""
 
         msg = BotMessage(
@@ -117,13 +96,30 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
-    async def about_active_players(
-        self, peer_id: int, names: list[str]
-    ) -> None:
+    async def active_players(self, peer_id: int, names: list[str]) -> None:
         """уведомляет чат о том, кто будет играть сейчас"""
 
         msg = BotMessage(
             peer_id=peer_id,
             text=GamePhrase.active_players + ", ".join(names),
+        )
+        await self.app.store.vk_api.send_message(msg)
+
+    async def game_aborted(self, peer_id: int) -> None:
+        """уведомляет чат о том, что игра отменена (при наборе игроков)"""
+
+        msg = BotMessage(
+            peer_id=peer_id,
+            text=GamePhrase.game_abort,
+        )
+        await self.app.store.vk_api.send_message(msg)
+
+    async def game_canceled(self, peer_id: int, username: str) -> None:
+        """уведомляет чат о том, что игра закончена (раньше времени)
+        передать username = имя нажавшего на кнопку остановки"""
+
+        msg = BotMessage(
+            peer_id=peer_id,
+            text=GamePhrase.game_cancel + username,
         )
         await self.app.store.vk_api.send_message(msg)
