@@ -1,6 +1,6 @@
 import typing
 
-from app.store.vk_api.dataclasses import BotMessage, Keyboard
+from app.store.vk_api.dataclasses import Action, BotMessage, Button, Keyboard
 
 from .buttons import GameButton
 from .phrases import GamePhrase
@@ -17,6 +17,7 @@ class GameNotifier:
 
     async def game_is_on(self, peer_id: int) -> None:
         """уведомляет чат о том, что игра уже идет"""
+        # TODO уведомлять, на какой стадии игра
 
         msg = BotMessage(
             peer_id=peer_id,
@@ -130,8 +131,16 @@ class GameNotifier:
             keyboard=Keyboard(
                 buttons=[
                     [
+                        Button(action=Action(label="10")),
+                        Button(action=Action(label="50")),
+                        Button(action=Action(label="100")),
+                        Button(action=Action(label="300")),
+                        Button(action=Action(label="500")),
+                    ],
+                    [
+                        GameButton.all_in,
                         GameButton.show_cash,
-                    ]
+                    ],
                 ]
             ).json,
         )
@@ -172,7 +181,6 @@ class GameNotifier:
             ).json,
         )
         await self.app.store.vk_api.send_message(msg)
-
 
     async def bet_accepted(self, peer_id: int, username: str, bet: int) -> None:
         """уведомляет игрока, что его ставка принята"""
