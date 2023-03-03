@@ -9,7 +9,7 @@ if typing.TYPE_CHECKING:
     from app.web.app import Application
 
 
-class GameNotification:
+class GameNotifier:
     """уведомления в чат игры"""
 
     def __init__(self, app: "Application"):
