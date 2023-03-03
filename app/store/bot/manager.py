@@ -72,6 +72,7 @@ class BotManager:
             "я в деле!": self.app.store.game_manager.register_player,
             "я пас": self.app.store.game_manager.unregister_player,
             "посмотреть баланс": self.app.store.game_manager.send_player_cash,
+            "ва-банк!": self.app.store.game_manager.accept_bet,
             "": self.app.store.game_manager.offer_game,
         }
 
