@@ -259,6 +259,34 @@ class GameManager:
             peer_id=update.peer_id, username=username, bet=bet
         )
 
+    async def send_player_cash(self, update: Update) -> None:
+        """отправляет в чат информацию о балансе игрока, сделавшего такой запрос"""
+        # TODO сделать всплывающим (sendMessageEventAnswer > show_snackbar)
+
+        game = await self.app.store.game.get_game_by_chat(
+            chat_id=update.peer_id
+        )
+        player = await self.app.store.game.get_player(
+            vk_user_id=update.from_id, game_id=game.id
+        )
+        name = await self.app.store.vk_api.get_username(
+            vk_user_id=update.from_id
+        )
+
+        if not player:
+            msg = BotMessage(
+                peer_id=update.peer_id,
+                text=name + GamePhrase.not_a_player,
+            )
+            await self.app.store.vk_api.send_message(msg)
+            return
+
+        msg = BotMessage(
+            peer_id=update.peer_id,
+            text=name + GamePhrase.show_cash + str(player.cash),
+        )
+        await self.app.store.vk_api.send_message(msg)
+
     async def send_game_rules(self, update: Update) -> None:
         """описание правил игры"""
         # TODO сделать нормальное описание правил
