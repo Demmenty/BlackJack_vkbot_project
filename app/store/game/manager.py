@@ -210,12 +210,11 @@ class GameManager:
 
     async def accept_bet(self, update: Update) -> None:
         """проверяет и регистрирует ставку игрока"""
-        # TODO декоратор на проверку нужной стадии
+        # TODO декоратор на проверку нужной стадии @allowed_state(*args)
         game_is_on = await self.app.store.game.is_game_on(
             chat_id=update.peer_id
         )
         if not game_is_on:
-            await self.notifier.game_is_off(peer_id=update.peer_id)
             return
 
         game = await self.app.store.game.get_or_create_game(
@@ -231,14 +230,7 @@ class GameManager:
         if not player:
             return
 
-        bet = int(update.text)
         username = await self.app.store.game.get_player_name(player.id)
-
-        if bet == 0:
-            await self.notifier.zero_bet(
-                peer_id=update.peer_id, username=username
-            )
-            return
 
         if player.bet is not None:
             await self.notifier.bet_accepted_already(
@@ -246,11 +238,23 @@ class GameManager:
             )
             return
 
-        if bet > player.cash:
-            await self.notifier.to_much_bet(
-                peer_id=update.peer_id, username=username
-            )
-            return
+        # TODO вынести команды куда-то
+        if update.text == "ва-банк!":
+            bet = player.cash
+        else:
+            bet = int(update.text)
+
+            if bet == 0:
+                await self.notifier.zero_bet(
+                    peer_id=update.peer_id, username=username
+                )
+                return
+
+            if bet > player.cash:
+                await self.notifier.to_much_bet(
+                    peer_id=update.peer_id, username=username
+                )
+                return
 
         await self.app.store.game.change_player_bet(
             player_id=player.id, new_bet=bet
