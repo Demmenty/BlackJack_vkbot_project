@@ -63,7 +63,7 @@ class GameAccessor(BaseAccessor):
                     player = PlayerModel(user_id=vk_user.id, game_id=game.id)
                     session.add(player)
                     await session.commit()
-                    is_created - True
+                    is_created = True
 
         return player, is_created
 
