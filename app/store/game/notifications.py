@@ -220,3 +220,13 @@ class GameNotifier:
             text=GamePhrase.game_cancel + username,
         )
         await self.app.store.vk_api.send_message(msg)
+
+    async def wrong_state(self, peer_id: int) -> None:
+        """уведомляет чат о том, что запрошенная команда
+        не подходит для текущей стадии игры в нем"""
+
+        msg = BotMessage(
+            peer_id=peer_id,
+            text=GamePhrase.wrong_state,
+        )
+        await self.app.store.vk_api.send_message(msg)
