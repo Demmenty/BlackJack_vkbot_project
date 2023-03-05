@@ -8,3 +8,10 @@ class GameButton:
     register = Button(action=Action(label="Я в деле!"))
     unregister = Button(color="secondary", action=Action(label="Я пас"))
     abort = Button(color="negative", action=Action(label="Отменить игру"))
+    show_cash = Button(
+        color="secondary", action=Action(label="Посмотреть баланс")
+    )
+    casino = Button(
+        color="negative", action=Action(label="Ебаный рот этого казино!")
+    )
+    all_in = Button(action=Action(label="Ва-банк!"))

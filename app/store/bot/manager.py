@@ -57,7 +57,11 @@ class BotManager:
     async def handle_chat_msg(self, update: Update) -> None:
         """обработка сообщения в беседе"""
 
-        update_txt = self._cleaned_update_text(update.text)
+        update.text = self._cleaned_update_text(update.text)
+
+        if update.text.isdigit():
+            await self.app.store.game_manager.accept_bet(update)
+            return
 
         # TODO все возможные команды вынести в ЕНАМ в одно место, см.worknote
         game_handlers = {
@@ -67,10 +71,12 @@ class BotManager:
             "отменить игру": self.app.store.game_manager.abort_game,
             "я в деле!": self.app.store.game_manager.register_player,
             "я пас": self.app.store.game_manager.unregister_player,
+            "посмотреть баланс": self.app.store.game_manager.send_player_cash,
+            "ва-банк!": self.app.store.game_manager.accept_bet,
             "": self.app.store.game_manager.offer_game,
         }
 
-        handler = game_handlers.get(update_txt)
+        handler = game_handlers.get(update.text)
 
         if handler:
             await handler(update)

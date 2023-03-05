@@ -19,7 +19,7 @@ class GameAccessor(BaseAccessor):
 
                 if not vk_user:
                     name = await self.app.store.vk_api.get_username(
-                        user_id=vk_user_id
+                        vk_user_id=vk_user_id
                     )
                     vk_user = VKUserModel(vk_user_id=vk_user_id, name=name)
                     session.add(vk_user)
@@ -64,6 +64,23 @@ class GameAccessor(BaseAccessor):
                     is_created = True
 
         return player, is_created
+
+    async def get_player(
+        self, vk_user_id: int, game_id: int
+    ) -> PlayerModel | None:
+        """возвращает модель игрока из базы данных"""
+
+        async with self.app.database.session() as session:
+            async with session.begin():
+                q = (
+                    select(PlayerModel)
+                    .filter_by(game_id=game_id)
+                    .filter(PlayerModel.vk_user.has(vk_user_id=vk_user_id))
+                )
+                result = await session.execute(q)
+                player = result.scalars().first()
+
+        return player
 
     async def change_player_state(
         self, player_id: int, is_active: bool
@@ -140,7 +157,7 @@ class GameAccessor(BaseAccessor):
         return result
 
     async def change_game_state(self, game_id: int, new_state: str) -> None:
-        """смена статуса игры"""
+        """меняет статус игры"""
 
         async with self.app.database.session() as session:
             async with session.begin():
@@ -148,6 +165,20 @@ class GameAccessor(BaseAccessor):
                     update(GameModel)
                     .filter_by(id=game_id)
                     .values(state=new_state)
+                )
+                await session.execute(q)
+
+    async def change_player_bet(
+        self, player_id: int, new_bet: int | None
+    ) -> None:
+        """меняет ставку игрока"""
+
+        async with self.app.database.session() as session:
+            async with session.begin():
+                q = (
+                    update(PlayerModel)
+                    .filter_by(id=player_id)
+                    .values(bet=new_bet)
                 )
                 await session.execute(q)
 
