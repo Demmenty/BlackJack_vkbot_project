@@ -258,8 +258,7 @@ class GameNotifier:
         """уведомляет игрока, что он лезет без очереди"""
 
         msg = BotMessage(
-            peer_id=peer_id, 
-            text=GamePhrase.not_your_turn(username)
+            peer_id=peer_id, text=GamePhrase.not_your_turn(username)
         )
         await self.app.store.vk_api.send_message(msg)
 
@@ -355,12 +354,14 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
-    async def player_win(self, peer_id: int, username: str, blackjack: bool = False) -> None:
+    async def player_win(
+        self, peer_id: int, username: str, blackjack: bool = False
+    ) -> None:
         """уведомляет игрока, что он выиграл"""
 
         msg = BotMessage(
             peer_id=peer_id,
-            text= GamePhrase.player_win(username, blackjack),
+            text=GamePhrase.player_win(username, blackjack),
         )
         await self.app.store.vk_api.send_message(msg)
 
@@ -403,4 +404,15 @@ class GameNotifier:
                     buttons=[[GameButton.start, GameButton.rules]]
                 ).json,
             )
+        await self.app.store.vk_api.send_message(msg)
+
+    async def start_cash_given(
+        self, peer_id: int, username: str, start_cash: int = 1000
+    ) -> None:
+        """уведомляет игрока о выдаче стартового баланса"""
+
+        msg = BotMessage(
+            peer_id=peer_id,
+            text=GamePhrase.start_cash_given(username, start_cash),
+        )
         await self.app.store.vk_api.send_message(msg)

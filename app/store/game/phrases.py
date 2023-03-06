@@ -87,8 +87,12 @@ class GamePhrase:
         )
 
     def show_cash(self, name: str, cash: int) -> str:
-        cash_string = str(cash) + get_noun_ending(
-            cash, "золотая монета", "золотые монеты", "золотых монет"
+        cash_string = (
+            str(cash)
+            + " "
+            + get_noun_ending(
+                cash, "золотая монета", "золотые монеты", "золотых монет"
+            )
         )
         if cash < 100:
             phrase = f"{name} заглядывает в потрепанный кошелек, наскребая {cash_string}"
@@ -116,24 +120,38 @@ class GamePhrase:
 
     def bet_accepted(self, name: str, bet: int) -> str:
         if bet < 51:
-            bet_string = str(bet) + get_noun_ending(bet, "монету", "монеты", "монет")
+            bet_string = (
+                str(bet)
+                + " "
+                + get_noun_ending(bet, "монету", "монеты", "монет")
+            )
             phrase = (
                 f"{name} кропотливо отсчитывает жалкие {bet_string} и кладет на стол. "
                 + "Во взгляде тени промелькнула нехорошая искра."
             )
         elif bet > 499:
-            bet_string = str(bet) + get_noun_ending(bet, "монеты", "монет", "монет")
+            bet_string = (
+                str(bet)
+                + " "
+                + get_noun_ending(bet, "монеты", "монет", "монет")
+            )
             phrase = (
                 f"Внушительная гора из {bet_string} образовалась на столе.%0A"
                 + "{name} получает одобрительный кивок призрака."
             )
         else:
-            bet_string = str(bet) + get_noun_ending(bet, "монету", "монеты", "монет")
+            bet_string = (
+                str(bet)
+                + " "
+                + get_noun_ending(bet, "монету", "монеты", "монет")
+            )
             phrase = f"{name} ставит {bet_string}."
         return phrase
 
     def bet_accepted_already(self, name: str, bet: int) -> str:
-        bet_string = str(bet) + get_noun_ending(bet, "монету", "монеты", "монет")
+        bet_string = (
+            str(bet) + " " + get_noun_ending(bet, "монету", "монеты", "монет")
+        )
         phrase = (
             f"{name} тянется, чтобы сделать ставку, но в это мгновение понимает, что уже положил {bet_string}. "
             + f"Одергивая руку, {name} надется, что никто не заметил такой глупости."
@@ -208,3 +226,17 @@ class GamePhrase:
 
     def game_ended(self) -> str:
         return f"Раунд окончен. Призрак недобро хохочет."
+
+    def start_cash_given(self, name: str, start_cash: int) -> str:
+        start_cash_string = (
+            str(start_cash)
+            + " "
+            + get_noun_ending(
+                start_cash, "золотая монета", "золотые монеты", "золотых монет"
+            )
+        )
+        phrase = (
+            "Видя ваши дырявые карманы, призрак тяжело вздыхает."
+            + f"{name} вдруг обнаруживает у себя кошелек, в котором сверкает {start_cash_string}"
+        )
+        return phrase
