@@ -5,7 +5,7 @@ from app.store.game.buttons import GameButton
 from app.store.game.decks import EndlessDeck
 from app.store.game.notifications import GameNotifier
 from app.store.game.phrases import GamePhrase
-from app.store.game.state_checkers import (
+from app.store.game.decorators import (
     game_must_be_off,
     game_must_be_on,
     game_must_be_on_state,
