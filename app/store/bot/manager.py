@@ -46,13 +46,7 @@ class BotManager:
             text=BotPhrase.greeting,
         )
         await self.app.store.vk_api.send_message(msg)
-
-        game_is_on = await self.app.store.game.is_game_on(
-            chat_id=update.peer_id
-        )
-
-        if not game_is_on:
-            await self.app.store.game_manager.offer_game(update)
+        await self.app.store.game_handler.send_game_offer(update)
 
     async def handle_chat_msg(self, update: Update) -> None:
         """обработка сообщения в беседе"""
@@ -60,20 +54,24 @@ class BotManager:
         update.text = self._cleaned_update_text(update.text)
 
         if update.text.isdigit():
-            await self.app.store.game_manager.accept_bet(update)
+            await self.app.store.game_handler.accept_bet(update)
             return
 
         # TODO все возможные команды вынести в ЕНАМ в одно место, см.worknote
         game_handlers = {
-            "начать игру": self.app.store.game_manager.start_new_game,
-            "правила игры": self.app.store.game_manager.send_game_rules,
-            "остановить игру": self.app.store.game_manager.cancel_game,
-            "отменить игру": self.app.store.game_manager.abort_game,
-            "я в деле!": self.app.store.game_manager.register_player,
-            "я пас": self.app.store.game_manager.unregister_player,
-            "посмотреть баланс": self.app.store.game_manager.send_player_cash,
-            "ва-банк!": self.app.store.game_manager.accept_bet,
-            "": self.app.store.game_manager.offer_game,
+            "начать игру": self.app.store.game_handler.start_game,
+            "правила игры": self.app.store.game_handler.send_game_rules,
+            "остановить игру": self.app.store.game_handler.cancel_game,
+            "отменить игру": self.app.store.game_handler.abort_game,
+            "я в деле!": self.app.store.game_handler.register_player,
+            "я пас": self.app.store.game_handler.unregister_player,
+            "посмотреть баланс": self.app.store.game_handler.send_player_cash,
+            "ва-банк!": self.app.store.game_handler.accept_bet,
+            "еще карту": self.app.store.game_handler.deal_more_card,
+            "ещё карту": self.app.store.game_handler.deal_more_card,
+            "хватит": self.app.store.game_handler.stop_dealing_cards,
+            "посмотреть руку": self.app.store.game_handler.send_player_hand,
+            "": self.app.store.game_handler.send_game_offer,
         }
 
         handler = game_handlers.get(update.text)
