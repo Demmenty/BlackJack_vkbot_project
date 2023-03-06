@@ -43,3 +43,11 @@ class BotMessage:
     peer_id: int
     text: str
     keyboard: Keyboard = ""
+
+
+# инфо о пользователе vk
+@dataclass
+class VKUser:
+    vk_user_id: int
+    name: str
+    sex: str
