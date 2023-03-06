@@ -43,6 +43,7 @@ class BotMessage:
     peer_id: int
     text: str
     keyboard: Keyboard = ""
+    attachment: str = ""
 
 
 # инфо о пользователе vk

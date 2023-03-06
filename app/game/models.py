@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
+from sqlalchemy import JSON, Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
 from app.store.database.sqlalchemy_base import db
@@ -22,7 +22,7 @@ class ChatModel(db):
         return f"ChatModel(id={self.id!r}, vk_peer_id={self.vk_peer_id!r})"
 
 
-# TODO ограничить варианты state: inactive, define_players, betting, ...
+# TODO ограничить варианты state: inactive, define_players, betting, dealing, petting, ...
 # TODO загуглить, почему у меня связь отображается не как 1-1 и исправить
 class GameModel(db):
     __tablename__ = "game"
@@ -30,6 +30,8 @@ class GameModel(db):
     id = Column(Integer, primary_key=True)
     chat_id = Column(ForeignKey("chat.id", ondelete="CASCADE"), nullable=False)
     state = Column(String, default="inactive", nullable=False)
+    current_player_id = Column(Integer, nullable=True)
+    dealer_points = Column(Integer, nullable=True)
 
     chat = relationship(
         "ChatModel",
@@ -56,6 +58,7 @@ class PlayerModel(db):
     game_id = Column(ForeignKey("game.id", ondelete="CASCADE"), nullable=False)
     cash = Column(Integer, default=1000, nullable=False)
     bet = Column(Integer, nullable=True)
+    hand: dict = Column(JSON, default={"cards": []}, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
 
     game = relationship("GameModel", back_populates="players")
@@ -78,3 +81,6 @@ class VKUserModel(db):
 
     def __repr__(self):
         return f"VKUserModel(id={self.id!r}, name={self.name!r})"
+
+
+# TODO статистика, сколько всего денег выиграло казино
