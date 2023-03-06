@@ -98,7 +98,7 @@ class GamePhrase:
             phrase = f"{name} заглядывает в потрепанный кошелек, наскребая {cash_string}"
         elif cash > 3000:
             phrase = (
-                f"{name} вывалиает свой увесистый кошель на стол. "
+                f"{name} вываливает свой увесистый кошель на стол. "
                 + f"Проходит немало времени, пока {name} наконец не заявляет довольно: {cash_string}"
             )
         elif cash == 300:
@@ -207,7 +207,7 @@ class GamePhrase:
         return f"Перебор!"
 
     def player_loss(self, name: str) -> str:
-        return f"{name} печально наблюдает, как монеты растворяется в воздухе"
+        return f"{name} печально наблюдает, как монеты растворяются в воздухе."
 
     def player_draw(self, name: str) -> str:
         return f'"С вами у нас ничья, {name}", заявляет призрак.'
