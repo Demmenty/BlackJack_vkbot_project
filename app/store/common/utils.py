@@ -1,4 +1,4 @@
-def get_noun_ending(number, one, two, five) -> str:
+def get_noun_ending(number: int, one: str, two: str, five: str) -> str:
     """возвращает вариант слова с правильным окончанием в зависимости от числа
     Нужно передать число и соответствующие варианты
     например: get_noun_ending(4, 'слон', 'слона', 'слонов'))
