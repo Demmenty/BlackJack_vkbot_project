@@ -17,7 +17,7 @@ class EndlessDeck:
         "Валет": 10,
         "Дама": 10,
         "Король": 10,
-        "Туз": "ace",
+        "Туз": -1,
     }
     card_suits = ["♠", "♣", "♥", "♦"]
 
@@ -41,7 +41,7 @@ class EndlessDeck:
             value = card.split()[0]
             weight = self.card_values.get(value)
 
-            if type(weight) is int:
+            if weight != -1:
                 points += weight
             else:
                 aces += 1
@@ -60,12 +60,8 @@ class EndlessDeck:
     def is_blackjack(self, cards: list[str]) -> bool:
         """проверяет на блекджек (2 карты = 21)"""
 
-        if len(cards) != 2:
-            return False
+        result = (len(cards) == 2 and self.count_points(cards) == 21)
 
-        if self.count_points(cards) != 21:
-            return False
-
-        return True
+        return result
 
     # TODO метод возврата пути к картинке к нужной карте
