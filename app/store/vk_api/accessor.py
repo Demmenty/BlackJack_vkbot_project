@@ -112,6 +112,8 @@ class VkApiAccessor(BaseAccessor):
         return updates
 
     async def send_message(self, message: BotMessage) -> None:
+        """посылает сообщение вконтакте"""
+
         url = self._build_query(
             host=API_PATH,
             method="messages.send",
@@ -120,6 +122,7 @@ class VkApiAccessor(BaseAccessor):
                 "peer_id": message.peer_id,
                 "message": message.text,
                 "keyboard": message.keyboard,
+                "attachment": message.attachment,
                 "access_token": self.app.config.bot.token,
             },
         )
