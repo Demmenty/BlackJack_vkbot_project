@@ -164,8 +164,8 @@ class GamePhrase:
     def player_turn(self, name: str) -> str:
         return f"Карты полетели в сторону авантюриста по имени {name}."
 
-    def not_your_turn(self) -> str:
-        return f", куда без очереди?! 😠"
+    def not_your_turn(self, name: str) -> str:
+        return f"{name} пытается встрять без очереди, но тень игнорирует такое нахальство"
 
     def cards_received(self, cards: list[str]) -> str:
         return f"Следующие карты появились перед игроком: " + " ".join(cards)
