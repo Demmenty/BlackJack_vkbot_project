@@ -322,7 +322,7 @@ class GameAccessor(BaseAccessor):
                 await session.execute(q)
 
     async def get_dealer_points(self, game_id: int) -> int:
-        """записывает набранные дилером очки"""
+        """возвращает набранные дилером очки"""
 
         async with self.app.database.session() as session:
             async with session.begin():
