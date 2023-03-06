@@ -203,7 +203,7 @@ class GamePhrase:
             )
         return phrase
 
-    def deal_to_deale(self) -> str:
+    def deal_to_dealer(self) -> str:
         return f"Тень начинает раздавать карты себе."
 
     def game_ended(self) -> str:
