@@ -22,7 +22,7 @@ class GameNotifier:
 
         msg = BotMessage(
             peer_id=peer_id,
-            text=GamePhrase.game_is_on,
+            text=GamePhrase.game_is_on(),
         )
         await self.app.store.vk_api.send_message(msg)
 
@@ -31,7 +31,7 @@ class GameNotifier:
 
         msg = BotMessage(
             peer_id=peer_id,
-            text=GamePhrase.game_is_off,
+            text=GamePhrase.game_is_off(),
         )
         await self.app.store.vk_api.send_message(msg)
 
@@ -40,7 +40,7 @@ class GameNotifier:
 
         msg = BotMessage(
             peer_id=peer_id,
-            text=GamePhrase.game_begun,
+            text=GamePhrase.game_begun(),
         )
         await self.app.store.vk_api.send_message(msg)
 
@@ -49,7 +49,7 @@ class GameNotifier:
 
         msg = BotMessage(
             peer_id=peer_id,
-            text=GamePhrase.wait_players,
+            text=GamePhrase.wait_players(),
             keyboard=Keyboard(
                 buttons=[
                     [
@@ -110,7 +110,7 @@ class GameNotifier:
 
         msg = BotMessage(
             peer_id=peer_id,
-            text=GamePhrase.no_players,
+            text=GamePhrase.no_players(),
         )
         await self.app.store.vk_api.send_message(msg)
 
@@ -128,7 +128,7 @@ class GameNotifier:
 
         msg = BotMessage(
             peer_id=peer_id,
-            text=GamePhrase.waiting_bets,
+            text=GamePhrase.waiting_bets(),
             keyboard=Keyboard(
                 buttons=[
                     [
@@ -165,31 +165,17 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
-    async def no_bet(self, peer_id: int, username: str) -> None:
-        """уведомляет игрока, что он не сделал ставку,
-        высылает предложение отправить или отказаться от участия"""
+    async def no_player_bet(self, peer_id: int, username: str) -> None:
+        """уведомляет игрока, что он не сделал ставку"""
 
         msg = BotMessage(
             peer_id=peer_id,
-            text=GamePhrase.no_bet(username),
-            keyboard=Keyboard(
-                buttons=[
-                    [
-                        GameButton.unregister,
-                        GameButton.abort,
-                    ]
-                ]
-            ).json,
+            text=GamePhrase.no_player_bet(username),
         )
         await self.app.store.vk_api.send_message(msg)
 
     async def bet_accepted(self, peer_id: int, username: str, bet: int) -> None:
         """уведомляет игрока, что его ставка принята"""
-
-        if bet == 300:
-            bet = "♂three hundred bucks♂"
-        else:
-            bet = "$" + str(bet)
 
         msg = BotMessage(
             peer_id=peer_id,
@@ -198,13 +184,13 @@ class GameNotifier:
         await self.app.store.vk_api.send_message(msg)
 
     async def bet_accepted_already(
-        self, peer_id: int, username: str, bet: int
+        self, peer_id: int, username: str, bet: int, sex: str
     ) -> None:
         """уведомляет игрока, что его ставка принята"""
 
         msg = BotMessage(
             peer_id=peer_id,
-            text=GamePhrase.bet_accepted_already(username, bet),
+            text=GamePhrase.bet_accepted_already(username, bet, sex),
         )
         await self.app.store.vk_api.send_message(msg)
 
@@ -232,7 +218,7 @@ class GameNotifier:
 
         msg = BotMessage(
             peer_id=peer_id,
-            text=GamePhrase.wrong_state,
+            text=GamePhrase.wrong_state(),
         )
         await self.app.store.vk_api.send_message(msg)
 
@@ -241,16 +227,16 @@ class GameNotifier:
 
         msg = BotMessage(
             peer_id=peer_id,
-            text=GamePhrase.dealing_started,
+            text=GamePhrase.dealing_started(),
         )
         await self.app.store.vk_api.send_message(msg)
 
-    async def player_turn(self, peer_id: int, username: str) -> None:
+    async def player_turn(self, peer_id: int, username: str, sex: str) -> None:
         """уведомляет игрока о том, что его очередь брать карты"""
 
         msg = BotMessage(
             peer_id=peer_id,
-            text=GamePhrase.player_turn(username),
+            text=GamePhrase.player_turn(username, sex),
         )
         await self.app.store.vk_api.send_message(msg)
 
@@ -271,12 +257,12 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
-    async def offer_a_card(self, peer_id: int) -> None:
+    async def offer_a_card(self, peer_id: int, username: str) -> None:
         """выдает кнопки для запроса еще одной карты или отказа"""
 
         msg = BotMessage(
             peer_id=peer_id,
-            text=GamePhrase.offer_a_card,
+            text=GamePhrase.offer_a_card(username),
             keyboard=Keyboard(
                 buttons=[
                     [
@@ -286,6 +272,17 @@ class GameNotifier:
                     ]
                 ]
             ).json,
+        )
+        await self.app.store.vk_api.send_message(msg)
+
+    async def no_player_card_move(
+        self, peer_id: int, username: str, sex: str
+    ) -> None:
+        """уведомляет игрока, что его молчание понято как стоп раздача"""
+
+        msg = BotMessage(
+            peer_id=peer_id,
+            text=GamePhrase.no_player_card_move(username, sex),
         )
         await self.app.store.vk_api.send_message(msg)
 
@@ -306,6 +303,16 @@ class GameNotifier:
         msg = BotMessage(
             peer_id=peer_id,
             text=GamePhrase.not_a_player(username),
+        )
+        await self.app.store.vk_api.send_message(msg)
+
+    async def not_a_player_cash(self, peer_id: int, username: str) -> None:
+        """уведомляет пользователя, что он даже не игрок,
+        даже не гражданин и даже не паладин, и даже не имеет монет"""
+
+        msg = BotMessage(
+            peer_id=peer_id,
+            text=GamePhrase.not_a_player_cash(username),
         )
         await self.app.store.vk_api.send_message(msg)
 
@@ -332,7 +339,7 @@ class GameNotifier:
 
         msg = BotMessage(
             peer_id=peer_id,
-            text=GamePhrase.overflow,
+            text=GamePhrase.overflow(),
         )
         await self.app.store.vk_api.send_message(msg)
 
@@ -370,7 +377,7 @@ class GameNotifier:
 
         msg = BotMessage(
             peer_id=peer_id,
-            text=GamePhrase.deal_to_dealer,
+            text=GamePhrase.deal_to_dealer(),
         )
         await self.app.store.vk_api.send_message(msg)
 
@@ -379,7 +386,7 @@ class GameNotifier:
 
         msg = BotMessage(
             peer_id=peer_id,
-            text=GamePhrase.game_ended,
+            text=GamePhrase.game_ended(),
         )
         await self.app.store.vk_api.send_message(msg)
 
@@ -399,7 +406,7 @@ class GameNotifier:
         else:
             msg = BotMessage(
                 peer_id=peer_id,
-                text=GamePhrase.game_offer,
+                text=GamePhrase.game_offer(),
                 keyboard=Keyboard(
                     buttons=[[GameButton.start, GameButton.rules]]
                 ).json,
