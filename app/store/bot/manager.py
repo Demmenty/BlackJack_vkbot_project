@@ -41,9 +41,13 @@ class BotManager:
     async def handle_chat_invite(self, update: Update) -> None:
         """обработка приглашения в беседу"""
 
+        # TODO game_is_on -> recovery
+        # TODO game_is_off > is_last_game -> offer
+        # TODO game_is_off > not is_last_game -> greeting + offer
+
         msg = BotMessage(
             peer_id=update.peer_id,
-            text=BotPhrase.greeting,
+            text=BotPhrase.meeting,
         )
         await self.app.store.vk_api.send_message(msg)
 
