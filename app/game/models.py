@@ -8,7 +8,7 @@ class ChatModel(db):
     __tablename__ = "chat"
 
     id = Column(Integer, primary_key=True)
-    vk_peer_id = Column(Integer, unique=True, nullable=False)
+    vk_id = Column(Integer, unique=True, nullable=False)
     casino_cash = Column(Integer, default=0, nullable=False)
     games_played = Column(Integer, default=0, nullable=False)
 
@@ -77,7 +77,7 @@ class VKUserModel(db):
     __tablename__ = "vk_user"
 
     id = Column(Integer, primary_key=True)
-    vk_user_id = Column(Integer, nullable=False)
+    vk_id = Column(Integer, nullable=False)
     name = Column(String, nullable=False)
     sex = Column(String, nullable=False)
     # TODO ограничить варианты sex, никакой пропаганды тут! >:(
