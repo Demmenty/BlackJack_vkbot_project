@@ -44,3 +44,11 @@ class BotMessage:
     text: str
     keyboard: Keyboard = ""
     attachment: str = ""
+
+
+# инфо о пользователе vk
+@dataclass
+class VKUser:
+    vk_user_id: int
+    name: str
+    sex: str
