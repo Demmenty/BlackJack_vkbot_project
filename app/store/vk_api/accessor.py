@@ -7,7 +7,7 @@ from aiohttp import TCPConnector
 from aiohttp.client import ClientSession
 
 from app.base.base_accessor import BaseAccessor
-from app.store.vk_api.dataclasses import BotMessage, Update
+from app.store.vk_api.dataclasses import BotMessage, Update, VKUser
 from app.store.vk_api.poller import Poller
 
 if typing.TYPE_CHECKING:
@@ -126,14 +126,15 @@ class VkApiAccessor(BaseAccessor):
             data = await response.json()
             self.logger.info(data)
 
-    async def get_username(self, vk_user_id: int) -> str:
-        """получить имя пользователя по его id в vk"""
+    async def get_user(self, vk_user_id: int) -> VKUser:
+        """получить датакласс пользователя по его id в vk"""
 
         url = self._build_query(
             host=API_PATH,
             method="users.get",
             params={
                 "user_ids": vk_user_id,
+                "fields": "sex",
                 "access_token": self.app.config.bot.token,
             },
         )
@@ -141,5 +142,10 @@ class VkApiAccessor(BaseAccessor):
             data = await response.json()
             self.logger.info(data)
 
-        username = data["response"][0]["first_name"]
-        return username
+        user = VKUser(
+            vk_user_id=data["response"][0]["id"],
+            name=data["response"][0]["first_name"],
+            sex=data["response"][0]["sex"],
+        )
+
+        return user
