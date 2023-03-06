@@ -22,7 +22,7 @@ class GamePhrase:
     def wait_players(self) -> str:
         return "Нетерпеливо постукивая по столу, тень ожидает, когда игроки займут свои места."
 
-    def game_aborted(self, name: str = None) -> str:
+    def game_aborted(self, name: str = "") -> str:
         phrase = "Призрак недовольно убирает карты и теряет к вам интерес. %0A"
         if name:
             phrase += (
