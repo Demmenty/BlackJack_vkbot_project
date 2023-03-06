@@ -6,9 +6,6 @@ if typing.TYPE_CHECKING:
     from app.store.game.manager import GameManager
 
 
-# Как мне лучше этот файл назвать?.. utils, decorators ..
-
-
 def game_must_be_on(method):
     """если активной игры в этом чате не ведется -
     отменяет выполнение метода и посылает соответствующее уведомление"""
