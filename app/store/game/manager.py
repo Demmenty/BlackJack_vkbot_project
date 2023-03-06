@@ -128,7 +128,6 @@ class GameManager:
     ) -> None:
         """выдает игроку карты в указанном количестве"""
 
-        # TODO попробовать в круглых скобках
         cards = [self.deck.take_a_card() for card in range(amount)]
 
         await self.app.store.game.add_cards_to_player(player_id, cards)
