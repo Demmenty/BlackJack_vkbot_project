@@ -34,7 +34,7 @@ class BotManager:
 
         msg = BotMessage(
             peer_id=update.peer_id,
-            text=BotPhrase.pm_msg,
+            text=BotPhrase.personal_msg,
         )
         await self.app.store.vk_api.send_message(msg)
 

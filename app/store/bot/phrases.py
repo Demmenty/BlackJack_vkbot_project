@@ -1,7 +1,8 @@
 class BotPhrase:
     """заготовленные общие фразы бота"""
 
-    def pm_msg(self) -> str:
+    def personal_msg(self) -> str:
+        # уведомление о том, что бот только для чатов :/  (пока что)
         return f"Призрак не обращает на вас внимания. Одинокие путники ему не интересны."
 
     def meeting(self, again: bool = False) -> str:
