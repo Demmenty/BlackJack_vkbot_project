@@ -15,3 +15,8 @@ class GameButton:
         color="negative", action=Action(label="Ебаный рот этого казино!")
     )
     all_in = Button(action=Action(label="Ва-банк!"))
+    one_more_card = Button(action=Action(label="Еще карту"))
+    enough_cards = Button(action=Action(label="Хватит"))
+    show_hand = Button(
+        color="secondary", action=Action(label="Посмотреть руку")
+    )
