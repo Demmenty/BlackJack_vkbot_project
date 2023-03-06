@@ -1,5 +1,6 @@
 import random
 import typing
+import requests
 from pathlib import Path
 from typing import Optional
 
@@ -143,3 +144,54 @@ class VkApiAccessor(BaseAccessor):
 
         username = data["response"][0]["first_name"]
         return username
+
+    async def _get_upload_url(self) -> str:
+        """получение адреса для загрузки вложения"""
+
+        url = self._build_query(
+            host=API_PATH,
+            method="photos.getMessagesUploadServer",
+            params={
+                "peer_id": 0,
+                "access_token": self.app.config.bot.token,
+            },
+        )
+
+        async with self.session.get(url) as response:
+            data = await response.json()
+            self.logger.info(data)
+
+        upload_url = data["response"]["upload_url"]
+        return upload_url
+    
+
+    async def upload_photo(self, path:str) -> str | None:
+        """загрузка фото в вк и получение его названия для прикрепления к сообщению
+        если возврат None, значит что-то не получилось"""
+
+        try:
+            upload_url = await self._get_upload_url()
+
+            response = requests.post(upload_url, files={'photo': open(path, 'rb')}).json()
+
+            url = self._build_query(
+                host=API_PATH,
+                method="photos.saveMessagesPhoto",
+                params={
+                    "photo": response['photo'],
+                    'server': response['server'],
+                    'hash': response['hash'],
+                    "access_token": self.app.config.bot.token,
+                }
+            )
+            async with self.session.get(url) as response:
+                data = await response.json()
+                
+                owner_id = data["response"][0]["owner_id"]
+                photo_id = data["response"][0]["id"]
+
+            return f'photo{owner_id}_{photo_id}'
+        
+        except Exception as error:
+            self.logger.info(error)
+            return None
