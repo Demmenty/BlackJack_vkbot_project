@@ -1,6 +1,5 @@
 import random
 import typing
-import requests
 from pathlib import Path
 from typing import Optional
 
@@ -166,26 +165,27 @@ class VkApiAccessor(BaseAccessor):
 
         upload_url = data["response"]["upload_url"]
         return upload_url
-    
 
-    async def upload_photo(self, path:str) -> str | None:
+    async def upload_photo(self, path: str) -> str | None:
         """загрузка фото в вк и получение его названия для прикрепления к сообщению
         если возврат None, значит что-то не получилось"""
 
         try:
             upload_url = await self._get_upload_url()
+            files = {"photo": open(path, "rb")}
 
-            response = requests.post(upload_url, files={'photo': open(path, 'rb')}).json()
+            async with self.session.post(upload_url, data=files) as response:
+                response = await response.json(content_type=None)
 
             url = self._build_query(
                 host=API_PATH,
                 method="photos.saveMessagesPhoto",
                 params={
-                    "photo": response['photo'],
-                    'server': response['server'],
-                    'hash': response['hash'],
+                    "photo": response["photo"],
+                    "server": response["server"],
+                    "hash": response["hash"],
                     "access_token": self.app.config.bot.token,
-                }
+                },
             )
             async with self.session.get(url) as response:
                 data = await response.json()
@@ -193,8 +193,8 @@ class VkApiAccessor(BaseAccessor):
                 owner_id = data["response"][0]["owner_id"]
                 photo_id = data["response"][0]["id"]
 
-            return f'photo{owner_id}_{photo_id}'
-        
+            return f"photo{owner_id}_{photo_id}"
+
         except Exception as error:
             self.logger.info(error)
             return None
