@@ -42,7 +42,7 @@ def game_must_be_on_state(*states):
 
     def decorator(method):
         async def wrapper(self: "GameManager", update: Update, *args, **kwargs):
-            game = await self.app.store.game.get_game_by_peer_id(update.peer_id)
+            game = await self.app.store.game.get_game_by_vk_id(update.peer_id)
 
             if game.state not in states:
                 await self.notifier.wrong_state(peer_id=update.peer_id)

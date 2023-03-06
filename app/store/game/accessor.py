@@ -7,51 +7,50 @@ from app.game.models import ChatModel, GameModel, PlayerModel, VKUserModel
 class GameAccessor(BaseAccessor):
     """взаимосвязь gamemanager и database"""
 
-    async def get_or_create_vk_user(self, vk_user_id: int) -> VKUserModel:
-        """возвращает VKUserModel, если нет - создает и возвращает.
-        передать vk_user_id (это user_id из vk update)"""
+    # vk_user
+    async def create_vk_user(self, vk_id: int) -> VKUserModel:
+        """создает и возвращает модель пользователя вк"""
 
         async with self.app.database.session() as session:
             async with session.begin():
-                q = select(VKUserModel).filter_by(vk_user_id=vk_user_id)
+                vk_user = await self.app.store.vk_api.get_user(vk_id)
+                vk_user_model = VKUserModel(
+                    vk_id=vk_id,
+                    name=vk_user.name,
+                    sex=vk_user.sex,
+                )
+                session.add(vk_user_model)
+                await session.commit()
+
+        return vk_user_model
+
+    async def get_vk_user_by_player(self, player_id: int) -> VKUserModel | None:
+        """возвращает модель пользователя вк"""
+
+        async with self.app.database.session() as session:
+            async with session.begin():
+                q = select(VKUserModel).filter(
+                    VKUserModel.players.any(id=player_id)
+                )
                 result = await session.execute(q)
                 vk_user = result.scalars().first()
 
-                if not vk_user:
-                    name = await self.app.store.vk_api.get_username(
-                        vk_user_id=vk_user_id
-                    )
-                    vk_user = VKUserModel(vk_user_id=vk_user_id, name=name)
-                    session.add(vk_user)
-                    await session.commit()
-
         return vk_user
 
-    async def get_or_create_player(
-        self, vk_user_id: int, game_id: int
-    ) -> tuple[PlayerModel, bool]:
-        """регистрирует пользователя в качестве игрока,
-        возвращает кортеж: его модель и предикат is_created"""
+    # player
+    async def create_player(self, vk_id: int, game_id: int) -> PlayerModel:
+        """создает и возвращает модель игрока"""
 
         async with self.app.database.session() as session:
             async with session.begin():
-                q = select(PlayerModel).filter_by(
-                    user_id=vk_user_id, game_id=game_id
-                )
-                result = await session.execute(q)
-                player = result.scalars().first()
-                is_created = False
+                player = PlayerModel(user_id=vk_id, game_id=game_id)
+                session.add(player)
+                await session.commit()
 
-                if not player:
-                    player = PlayerModel(user_id=vk_user_id, game_id=game_id)
-                    session.add(player)
-                    await session.commit()
-                    is_created = True
-
-        return player, is_created
+        return player
 
     async def get_player_by_id(self, player_id: int) -> PlayerModel | None:
-        """возвращает модель игрока из базы данных"""
+        """возвращает модель игрока"""
 
         async with self.app.database.session() as session:
             async with session.begin():
@@ -62,16 +61,16 @@ class GameAccessor(BaseAccessor):
         return player
 
     async def get_player_by_vk_and_game(
-        self, vk_user_id: int, game_id: int
+        self, vk_id: int, game_id: int
     ) -> PlayerModel | None:
-        """возвращает модель игрока из базы данных"""
+        """возвращает модель игрока"""
 
         async with self.app.database.session() as session:
             async with session.begin():
                 q = (
                     select(PlayerModel)
                     .filter_by(game_id=game_id)
-                    .filter(PlayerModel.vk_user.has(vk_user_id=vk_user_id))
+                    .filter(PlayerModel.vk_user.has(vk_id=vk_id))
                 )
                 result = await session.execute(q)
                 player = result.scalars().first()
@@ -90,38 +89,8 @@ class GameAccessor(BaseAccessor):
                 )
                 await session.execute(q)
 
-    async def get_player_name(self, player_id: int) -> str:
-        """возвращает имя игрока из базы по его id"""
-
-        async with self.app.database.session() as session:
-            async with session.begin():
-                q = (
-                    select(VKUserModel.name)
-                    .join_from(VKUserModel, PlayerModel)
-                    .filter_by(id=player_id)
-                )
-                result = await session.execute(q)
-                name = result.scalars().first()
-
-        return name
-
-    async def get_player_vk_id(self, player_id: int) -> int:
-        """возвращает vk user_id игрока"""
-
-        async with self.app.database.session() as session:
-            async with session.begin():
-                q = (
-                    select(VKUserModel.vk_user_id)
-                    .join_from(VKUserModel, PlayerModel)
-                    .filter_by(id=player_id)
-                )
-                result = await session.execute(q)
-                vk_id = result.scalars().first()
-
-        return vk_id
-
     async def set_player_state(self, player_id: int, is_active: bool) -> None:
-        """меняет статус игрока - активный/неактивный, передать желаемое значение в bool"""
+        """меняет статус игрока - активный/неактивный"""
 
         async with self.app.database.session() as session:
             async with session.begin():
@@ -213,44 +182,54 @@ class GameAccessor(BaseAccessor):
 
         return players
 
-    async def get_or_create_chat(self, vk_peer_id: int) -> ChatModel:
-        """возвращает ChatModel, если нет - создает и возвращает.
-        передать vk_peer_id (это peer_id из vk updte)"""
+    # chat
+    async def create_chat(self, vk_id: int) -> ChatModel:
+        """создает и возвращает модель чата, vk_id = peer_id из vk"""
 
         async with self.app.database.session() as session:
             async with session.begin():
-                q = select(ChatModel).filter_by(vk_peer_id=vk_peer_id)
-                result = await session.execute(q)
-                chat = result.scalars().first()
-
-                if not chat:
-                    chat = ChatModel(vk_peer_id=vk_peer_id)
-                    session.add(chat)
-                    await session.commit()
+                chat = ChatModel(vk_id=vk_id)
+                session.add(chat)
+                await session.commit()
 
         return chat
 
-    async def get_or_create_game(self, peer_id: int) -> GameModel:
-        """возвращает GameModel, если нет - создает неактивную
-        передать chat_id (это peer_id из vk)"""
-
-        chat = await self.get_or_create_chat(vk_peer_id=peer_id)
+    async def get_chat_by_vk_id(self, vk_id: int) -> ChatModel | None:
+        """возвращает модель чата, vk_id = peer_id из vk"""
 
         async with self.app.database.session() as session:
             async with session.begin():
-                q = select(GameModel).filter_by(chat_id=chat.id)
+                q = select(ChatModel).filter_by(vk_id=vk_id)
+                result = await session.execute(q)
+                chat = result.scalars().first()
+
+        return chat
+
+    # game
+    async def create_game(self, chat_id: int) -> GameModel:
+        """создает и возвращает модель игры для чата"""
+
+        async with self.app.database.session() as session:
+            async with session.begin():
+                game = GameModel(chat_id=chat_id)
+                session.add(game)
+                await session.commit()
+
+        return game
+
+    async def get_game_by_chat_id(self, chat_id: int) -> GameModel | None:
+        """возвращает модель игры"""
+
+        async with self.app.database.session() as session:
+            async with session.begin():
+                q = select(GameModel).filter_by(chat_id=chat_id)
                 result = await session.execute(q)
                 game = result.scalars().first()
-
-                if not game:
-                    game = GameModel(chat_id=chat.id, state="inactive")
-                    session.add(game)
-                    await session.commit()
 
         return game
 
     async def get_game_by_id(self, game_id: int) -> GameModel:
-        """возвращает модель игры по ее id"""
+        """возвращает модель игры"""
 
         async with self.app.database.session() as session:
             async with session.begin():
@@ -260,23 +239,21 @@ class GameAccessor(BaseAccessor):
 
         return game
 
-    async def get_game_by_peer_id(self, peer_id: int) -> GameModel | None:
-        """возвращает GameModel по peer_id из vk"""
+    async def get_game_by_vk_id(self, vk_id: int) -> GameModel | None:
+        """возвращает модель игры по peer_id из vk"""
 
         async with self.app.database.session() as session:
             async with session.begin():
-                q = select(GameModel).filter(
-                    GameModel.chat.has(vk_peer_id=peer_id)
-                )
+                q = select(GameModel).filter(GameModel.chat.has(vk_id=vk_id))
                 result = await session.execute(q)
                 game = result.scalars().first()
 
         return game
 
-    async def is_game_on(self, peer_id: int) -> bool:
+    async def is_game_on(self, vk_id: int) -> bool:
         """предикат, проверяющий, в процессе ли игра в чате по peer_id из vk"""
 
-        game = await self.get_game_by_peer_id(peer_id=peer_id)
+        game = await self.get_game_by_vk_id(vk_id=vk_id)
 
         # TODO cтейты вынести в енам! -> (game.state != State.INACTIVE)
         result = game and game.state != "inactive"
