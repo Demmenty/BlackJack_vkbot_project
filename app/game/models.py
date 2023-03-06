@@ -9,6 +9,8 @@ class ChatModel(db):
 
     id = Column(Integer, primary_key=True)
     vk_peer_id = Column(Integer, unique=True, nullable=False)
+    casino_cash = Column(Integer, default=0, nullable=False)
+    games_played = Column(Integer, default=0, nullable=False)
 
     # один_чат = одна_игра
     game = relationship(
@@ -60,6 +62,9 @@ class PlayerModel(db):
     bet = Column(Integer, nullable=True)
     hand: dict = Column(JSON, default={"cards": []}, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
+    games_played = Column(Integer, default=0, nullable=False)
+    games_won = Column(Integer, default=0, nullable=False)
+    games_lost = Column(Integer, default=0, nullable=False)
 
     game = relationship("GameModel", back_populates="players")
     vk_user = relationship("VKUserModel", back_populates="players")
