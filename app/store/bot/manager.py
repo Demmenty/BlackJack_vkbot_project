@@ -34,7 +34,7 @@ class BotManager:
 
         msg = BotMessage(
             peer_id=update.peer_id,
-            text=BotPhrase.personal_msg,
+            text=BotPhrase.personal_msg(),
         )
         await self.app.store.vk_api.send_message(msg)
 
@@ -47,7 +47,7 @@ class BotManager:
 
         msg = BotMessage(
             peer_id=update.peer_id,
-            text=BotPhrase.meeting,
+            text=BotPhrase.meeting(),
         )
         await self.app.store.vk_api.send_message(msg)
         await self.app.store.game_handler.send_game_offer(update)
@@ -63,18 +63,17 @@ class BotManager:
 
         # TODO все возможные команды вынести в ЕНАМ в одно место, см.worknote
         game_handlers = {
-            "начать игру": self.app.store.game_handler.start_game,
-            "правила игры": self.app.store.game_handler.send_game_rules,
-            "остановить игру": self.app.store.game_handler.cancel_game,
-            "отменить игру": self.app.store.game_handler.abort_game,
-            "я в деле!": self.app.store.game_handler.register_player,
-            "я пас": self.app.store.game_handler.unregister_player,
-            "посмотреть баланс": self.app.store.game_handler.send_player_cash,
+            "начать": self.app.store.game_handler.start_game,
+            "правила": self.app.store.game_handler.send_game_rules,
+            "прекратить": self.app.store.game_handler.cancel_game,
+            "отмена": self.app.store.game_handler.abort_game,
+            "играю": self.app.store.game_handler.register_player,
+            "пас": self.app.store.game_handler.unregister_player,
+            "кошель": self.app.store.game_handler.send_player_cash,
             "ва-банк!": self.app.store.game_handler.accept_bet,
-            "еще карту": self.app.store.game_handler.deal_more_card,
-            "ещё карту": self.app.store.game_handler.deal_more_card,
-            "хватит": self.app.store.game_handler.stop_dealing_cards,
-            "посмотреть руку": self.app.store.game_handler.send_player_hand,
+            "карту": self.app.store.game_handler.deal_more_card,
+            "довольно": self.app.store.game_handler.stop_dealing_cards,
+            "рука": self.app.store.game_handler.send_player_hand,
             "": self.app.store.game_handler.send_game_offer,
         }
 
