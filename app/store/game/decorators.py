@@ -56,4 +56,3 @@ def game_must_be_on_state(*states):
 
 
 # TODO @user_must_be_a_player
-# хм, а декораторов бывает много?
