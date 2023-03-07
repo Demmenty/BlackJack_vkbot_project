@@ -6,9 +6,11 @@ class GamePhrase:
 
     def game_offer(again: bool = False) -> str:
         if again:
-            return f"Тень предлагает провести еще раунд. %0A"
+            return f"Тень настойчиво предлагает продолжить. %0A"
         else:
-            return f"Мрачная тень предлагает сыграть партию в Блек Джек. %0A"
+            return (
+                f"Мрачное существо предлагает сыграть партию в Блек Джек. %0A"
+            )
 
     def game_is_on() -> str:
         return "Парящая нежить шипит на вас, намекая не мешать игре"
@@ -17,7 +19,7 @@ class GamePhrase:
         return "Тень не понимает, чего вы хотите, ведь в данный момент никто не играет."
 
     def game_begun() -> str:
-        return "Злорадно хохоча, полупрозрачный дилер, перемешивает огромную кипу карт. %0A"
+        return "Злорадно смеясь, морок перемешивает огромную кипу карт. %0A"
 
     def wait_players() -> str:
         return "Нетерпеливо постукивая по столу, тень ожидает, когда игроки займут свои места."
@@ -39,7 +41,7 @@ class GamePhrase:
     def rules(name: str) -> str:
         rules = (
             "Черные бездны на месте глаз призрака расширяются от удивления,"
-            " что кто-то не знаком со столь популярной в этих краях игрой.  %0A"
+            " что кто-то не знаком со столь популярной в этих краях игрой. %0A%0A"
             f"Тем не менее, {name} слышит хорошо заученную речь:  %0A"
             "- игроки до раздачи карт делают ставки, называя сумму монет или выбирая из распространенных вариантов%0A"
             "- дилер, то есть я, раздает игрокам по две карты%0A"
@@ -65,12 +67,12 @@ class GamePhrase:
         return f"{name} не желает соглашаться на эту авантюру."
 
     def player_already_registered(name: str) -> str:
-        return f"{name} нетерпеливо ерзает за игровым столом."
+        return f"{name} нетерпеливо ёрзает на стуле."
 
     def active_players(players: list[str]) -> str:
         if len(players) == 1:
             player = players[0]
-            phrase = f"В самоуверенном одиночестве за столом обнаруживается {player}."
+            phrase = f"В гордом одиночестве за столом обнаруживается {player}."
         elif len(players) == 2:
             players = " и ".join(players)
             phrase = f"{players} решили испытать удачу."
@@ -158,7 +160,7 @@ class GamePhrase:
             )
         if sex == "female":
             phrase = (
-                f"{name} подумала незаметно изменить свою ставку, но не прошла проверку ловкости. "
+                f"{name} попыталась незаметно изменить свою ставку, но не прошла проверку ловкости. "
                 + f"На столе остались лежать {bet_string}."
             )
         return phrase
@@ -187,13 +189,13 @@ class GamePhrase:
 
     def dealing_started() -> str:
         return (
-            "Неживой дилер принялся ловко раздавать карты. "
-            "За его движениями невозможно уследить."
+            "Нежить принялась ловко раздавать карты. "
+            "За её движениями невозможно уследить."
         )
 
     def player_turn(name: str, sex: str) -> str:
         if sex == "female":
-            return f"{name} наблюдает, как в её сторону летят карты."
+            return f"По летящим в нее картам, {name} догадалась, что наступил ее ход."
         if sex == "male":
             return f"{name} слышит, что объявлен его ход."
 
@@ -201,7 +203,7 @@ class GamePhrase:
         return f"{name} пытается встрять без очереди, но тень игнорирует такое нахальство"
 
     def cards_received(cards: list[str]) -> str:
-        return f"Следующие карты появились на столе: " + " ".join(cards)
+        return f"Следующие карты появились на столе: %0A" + " ".join(cards)
 
     def show_hand(name: str, cards: list[str]) -> str:
         if not cards:
@@ -243,10 +245,10 @@ class GamePhrase:
         return phrase
 
     def deal_to_dealer() -> str:
-        return f"Тень начинает раздавать карты себе."
+        return f"Призрак дилера начинает раздавать себе."
 
     def game_ended() -> str:
-        return f"Раунд окончен. Призрак недобро хохочет."
+        return f"Раунд окончен."
 
     def start_cash_given(name: str, start_cash: int) -> str:
         start_cash_string = (
