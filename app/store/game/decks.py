@@ -60,7 +60,7 @@ class EndlessDeck:
     def is_blackjack(self, cards: list[str]) -> bool:
         """проверяет на блекджек (2 карты = 21)"""
 
-        result = (len(cards) == 2 and self.count_points(cards) == 21)
+        result = len(cards) == 2 and self.count_points(cards) == 21
 
         return result
 

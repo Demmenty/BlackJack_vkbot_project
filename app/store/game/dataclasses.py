@@ -5,5 +5,5 @@ from asyncio import Task
 @dataclass
 class GameWaitTask:
     game_id: int
-    type: str 
+    type: str
     task: Task
