@@ -30,7 +30,7 @@ class Button:
 class Keyboard:
     buttons: list[Button]
     one_time: bool = False
-    inline: bool = True
+    inline: bool = False
 
     @property
     def json(self):
