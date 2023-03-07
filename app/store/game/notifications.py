@@ -9,12 +9,40 @@ if typing.TYPE_CHECKING:
     from app.web.app import Application
 
 
-# TODO возможно, отправлять не инлайн кнопки определенных команд, например "остановить игру"
 class GameNotifier:
     """посылает уведомления в чат игры"""
 
     def __init__(self, app: "Application"):
         self.app = app
+
+    async def game_offer(self, peer_id: int, again: bool = False) -> None:
+        """предлагает сыграть в Black Jack"""
+
+        if again:
+            buttons = [
+                [GameButton.start, GameButton.rules, GameButton.statistic]
+            ]
+        else:
+            buttons = [[GameButton.start, GameButton.rules]]
+
+        msg = BotMessage(
+            peer_id=peer_id,
+            text=GamePhrase.game_offer(again),
+            keyboard=Keyboard(
+                buttons=buttons,
+            ).json,
+        )
+
+        await self.app.store.vk_api.send_message(msg)
+
+    async def game_starting(self, peer_id: int) -> None:
+        """уведомляет чат о начале игры"""
+
+        msg = BotMessage(
+            peer_id=peer_id,
+            text=GamePhrase.game_begun(),
+        )
+        await self.app.store.vk_api.send_message(msg)
 
     async def game_is_on(self, peer_id: int) -> None:
         """уведомляет чат о том, что игра уже идет"""
@@ -32,15 +60,6 @@ class GameNotifier:
         msg = BotMessage(
             peer_id=peer_id,
             text=GamePhrase.game_is_off(),
-        )
-        await self.app.store.vk_api.send_message(msg)
-
-    async def game_starting(self, peer_id: int) -> None:
-        """уведомляет чат о начале игры"""
-
-        msg = BotMessage(
-            peer_id=peer_id,
-            text=GamePhrase.game_begun(),
         )
         await self.app.store.vk_api.send_message(msg)
 
@@ -98,15 +117,18 @@ class GameNotifier:
             keyboard=Keyboard(
                 buttons=[
                     [
-                        GameButton.casino,
-                    ]
+                        GameButton.register,
+                        GameButton.unregister,
+                        GameButton.abort,
+                    ],
+                    [GameButton.casino],
                 ]
             ).json,
         )
         await self.app.store.vk_api.send_message(msg)
 
     async def no_players(self, peer_id: int) -> None:
-        """уведомляет чат о том, что они петухи"""
+        """уведомляет чат о том, что никто не согласился играть"""
 
         msg = BotMessage(
             peer_id=peer_id,
@@ -157,7 +179,7 @@ class GameNotifier:
         await self.app.store.vk_api.send_message(msg)
 
     async def zero_bet(self, peer_id: int, username: str) -> None:
-        """уведомляет игрока, что он нельзя ставить ноль"""
+        """уведомляет игрока, что нельзя ставить ноль"""
 
         msg = BotMessage(
             peer_id=peer_id,
@@ -200,16 +222,23 @@ class GameNotifier:
         msg = BotMessage(
             peer_id=peer_id,
             text=GamePhrase.game_aborted(username),
+            keyboard=Keyboard(
+                buttons=[[GameButton.start, GameButton.rules]]
+            ).json,
         )
         await self.app.store.vk_api.send_message(msg)
 
     async def game_canceled(self, peer_id: int, username: str = "") -> None:
-        """уведомляет чат о том, что игра закончена (раньше времени)"""
+        """уведомляет чат о том, что игра остановлена (раньше времени)"""
 
         msg = BotMessage(
             peer_id=peer_id,
             text=GamePhrase.game_canceled(username),
-            keyboard=Keyboard(buttons=[[GameButton.statistic]]).json,
+            keyboard=Keyboard(
+                buttons=[
+                    [GameButton.start, GameButton.rules, GameButton.statistic]
+                ]
+            ).json,
         )
         await self.app.store.vk_api.send_message(msg)
 
@@ -269,7 +298,8 @@ class GameNotifier:
                     [
                         GameButton.one_more_card,
                         GameButton.enough_cards,
-                        GameButton.show_hand,
+                        GameButton.show_hand],
+                        [GameButton.stop,
                     ]
                 ]
             ).json,
@@ -385,34 +415,7 @@ class GameNotifier:
     async def game_ended(self, peer_id: int) -> None:
         """уведомляет чат о завершении игры"""
 
-        msg = BotMessage(
-            peer_id=peer_id,
-            text=GamePhrase.game_ended(),
-            keyboard=Keyboard(buttons=[[GameButton.statistic]]).json,
-        )
-        await self.app.store.vk_api.send_message(msg)
-
-    async def game_offer(self, peer_id: int, again: bool = False) -> None:
-        """предлагает сыграть в Black Jack"""
-
-        # TODO если again -> др кнопки?
-
-        if again:
-            msg = BotMessage(
-                peer_id=peer_id,
-                text=GamePhrase.game_offer(again),
-                keyboard=Keyboard(
-                    buttons=[[GameButton.start, GameButton.rules]]
-                ).json,
-            )
-        else:
-            msg = BotMessage(
-                peer_id=peer_id,
-                text=GamePhrase.game_offer(),
-                keyboard=Keyboard(
-                    buttons=[[GameButton.start, GameButton.rules]]
-                ).json,
-            )
+        msg = BotMessage(peer_id=peer_id, text=GamePhrase.game_ended())
         await self.app.store.vk_api.send_message(msg)
 
     async def start_cash_given(
