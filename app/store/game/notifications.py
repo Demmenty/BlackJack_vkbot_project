@@ -209,6 +209,7 @@ class GameNotifier:
         msg = BotMessage(
             peer_id=peer_id,
             text=GamePhrase.game_canceled(username),
+            keyboard=Keyboard(buttons=[[GameButton.statistic]]).json,
         )
         await self.app.store.vk_api.send_message(msg)
 
@@ -387,6 +388,7 @@ class GameNotifier:
         msg = BotMessage(
             peer_id=peer_id,
             text=GamePhrase.game_ended(),
+            keyboard=Keyboard(buttons=[[GameButton.statistic]]).json,
         )
         await self.app.store.vk_api.send_message(msg)
 
@@ -421,5 +423,36 @@ class GameNotifier:
         msg = BotMessage(
             peer_id=peer_id,
             text=GamePhrase.start_cash_given(username, start_cash),
+        )
+        await self.app.store.vk_api.send_message(msg)
+
+    async def chat_stat(
+        self, peer_id: int, games_played: int, casino_cash: int
+    ) -> None:
+        """уведомляет о статистике по чату"""
+
+        msg = BotMessage(
+            peer_id=peer_id,
+            text=GamePhrase.chat_stat(games_played, casino_cash),
+        )
+        await self.app.store.vk_api.send_message(msg)
+
+    async def player_stat(
+        self,
+        peer_id: int,
+        username: str,
+        sex: str,
+        games_played: int = 0,
+        games_won: int = 0,
+        games_lost: int = 0,
+        cash: int = 0,
+    ) -> None:
+        """уведомляет о статистике по игроку"""
+
+        msg = BotMessage(
+            peer_id=peer_id,
+            text=GamePhrase.player_stat(
+                username, sex, games_played, games_won, games_lost, cash
+            ),
         )
         await self.app.store.vk_api.send_message(msg)

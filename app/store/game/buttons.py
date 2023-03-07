@@ -17,3 +17,4 @@ class GameButton:
     one_more_card = Button(action=Action(label="карту"))
     enough_cards = Button(action=Action(label="довольно"))
     show_hand = Button(color="secondary", action=Action(label="рука"))
+    statistic = Button(color="secondary", action=Action(label="статистика"))

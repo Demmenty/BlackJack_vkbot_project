@@ -262,3 +262,10 @@ class GameHandler:
         await self.app.store.game_manager.stop_game(
             update.peer_id, game.id, causer.name
         )
+
+    async def send_statistic(self, update: Update) -> None:
+        """обрабатывает запрос статистики"""
+
+        await self.app.store.game_manager.send_statistic(
+            update.peer_id, update.from_id
+        )

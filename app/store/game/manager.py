@@ -125,7 +125,7 @@ class GameManager:
         await self.notifier.player_turn(vk_id, vk_user.name, vk_user.sex)
 
         await self.deal_cards_to_player(2, vk_id, game_id, player.id)
-        # TODO поставить таймер - отсутствие команды считать как "хватит"
+        await self.app.store.game.add_game_played_to_chat(vk_id)
 
     async def deal_cards_to_player(
         self, amount: int, vk_id: int, game_id: int, player_id: int
@@ -273,9 +273,11 @@ class GameManager:
     ) -> None:
         """засчитывает игроку выигрыш"""
 
-        await self.app.store.game.add_bet_to_cash(player_id, blackjack)
+        await self.app.store.game.add_bet_to_cash(vk_id, player_id, blackjack)
         await self.app.store.game.clear_player_hand(player_id)
         await self.app.store.game.set_player_state(player_id, False)
+        await self.app.store.game.add_game_played_to_player(player_id)
+        await self.app.store.game.add_game_win_to_player(player_id)
 
         vk_user = await self.app.store.game.get_vk_user_by_player(player_id)
         await self.notifier.player_win(vk_id, vk_user.name, blackjack)
@@ -286,6 +288,7 @@ class GameManager:
         await self.app.store.game.set_player_bet(player_id, None)
         await self.app.store.game.clear_player_hand(player_id)
         await self.app.store.game.set_player_state(player_id, False)
+        await self.app.store.game.add_game_played_to_player(player_id)
 
         vk_user = await self.app.store.game.get_vk_user_by_player(player_id)
         await self.notifier.player_draw(vk_id, vk_user.name)
@@ -293,15 +296,17 @@ class GameManager:
     async def set_player_loss(self, vk_id: int, player_id: int) -> None:
         """засчитывает игроку проигрыш"""
 
-        await self.app.store.game.withdraw_bet_from_cash(player_id)
+        await self.app.store.game.withdraw_bet_from_cash(vk_id, player_id)
         await self.app.store.game.clear_player_hand(player_id)
         await self.app.store.game.set_player_state(player_id, False)
+        await self.app.store.game.add_game_played_to_player(player_id)
+        await self.app.store.game.add_game_loss_to_player(player_id)
 
         vk_user = await self.app.store.game.get_vk_user_by_player(player_id)
         await self.notifier.player_loss(vk_id, vk_user.name)
 
     async def end_game(self, vk_id: int, game_id: int) -> None:
-        """заканчивает игру, выводит статистику"""
+        """заканчивает игру"""
 
         await self.app.store.game.set_game_state(game_id, "inactive")
         await self.notifier.game_ended(vk_id)
@@ -349,7 +354,34 @@ class GameManager:
         await self.app.store.game.set_game_state(game.id, "inactive")
         await self.notifier.game_canceled(vk_id, causer)
 
-        # TODO собрать и показать какие-то результаты
+    async def send_statistic(self, vk_chat_id: int, vk_user_id: int) -> None:
+        """отправляет в чат статистику"""
+
+        chat = await self.app.store.game.get_chat_by_vk_id(vk_chat_id)
+        await self.notifier.chat_stat(
+            vk_chat_id, chat.games_played, chat.casino_cash
+        )
+
+        game = await self.app.store.game.get_game_by_chat_id(chat.id)
+        player = await self.app.store.game.get_player_by_vk_and_game(
+            vk_user_id, game.id
+        )
+        if not player:
+            vk_user = await self.app.store.vk_api.get_user(vk_user_id)
+            await self.notifier.player_stat(
+                vk_chat_id, vk_user.name, vk_user.sex
+            )
+
+        vk_user = await self.app.store.game.get_vk_user_by_player(player.id)
+        await self.notifier.player_stat(
+            vk_chat_id,
+            vk_user.name,
+            vk_user.sex,
+            player.games_played,
+            player.games_won,
+            player.games_lost,
+            player.cash,
+        )
 
     async def recover(self) -> None:
         """восстанавливает игровую сессию после отключения"""

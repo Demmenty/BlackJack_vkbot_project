@@ -74,6 +74,7 @@ class BotManager:
             "карту": self.app.store.game_handler.deal_more_card,
             "довольно": self.app.store.game_handler.stop_dealing_cards,
             "рука": self.app.store.game_handler.send_player_hand,
+            "статистика": self.app.store.game_handler.send_statistic,
             "": self.app.store.game_handler.send_game_offer,
         }
 

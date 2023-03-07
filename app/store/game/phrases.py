@@ -70,9 +70,7 @@ class GamePhrase:
     def active_players(players: list[str]) -> str:
         if len(players) == 1:
             player = players[0]
-            phrase = (
-                f"В самоуверенном одиночестве за столом обнаруживается {player}"
-            )
+            phrase = f"В самоуверенном одиночестве за столом обнаруживается {player}."
         elif len(players) == 2:
             players = " и ".join(players)
             phrase = f"{players} решили испытать удачу."
@@ -82,9 +80,7 @@ class GamePhrase:
         return phrase
 
     def waiting_bets() -> str:
-        return (
-            f"Потусторонний дилер потирает конечности в ожидании золотых."
-        )
+        return "Потусторонний дилер потирает конечности в ожидании золотых."
 
     def show_cash(name: str, cash: int) -> str:
         cash_string = (
@@ -97,7 +93,7 @@ class GamePhrase:
         if cash == 0:
             phrase = f"{name} чувствует гнетущую пустоту своего кошелька, и, кажется, чего-то еще."
         elif cash < 100:
-            phrase = f"{name} заглядывает в потрепанный кошелек, наскребая {cash_string}"
+            phrase = f"{name} заглядывает в потрепанный кошелек, наскребая {cash_string}."
         elif cash > 3000:
             phrase = (
                 f"{name} вываливает свой увесистый кошель на стол. "
@@ -110,7 +106,7 @@ class GamePhrase:
             )
         else:
             phrase = (
-                f"Заглядывая в карман, {name} обнаруживает там {cash_string}"
+                f"Заглядывая в карман, {name} обнаруживает там {cash_string}."
             )
         return phrase
 
@@ -156,13 +152,15 @@ class GamePhrase:
         )
         if sex == "male":
             phrase = (
-                f"{name} тянется, чтобы сделать ставку, " + 
-                f"но в это мгновение понимает, что уже положил {bet_string}. "+ 
-                f"Одергивая руку, {name} надется, что никто не заметил такой глупости."
+                f"{name} тянется, чтобы сделать ставку, "
+                + f"но в это мгновение понимает, что уже положил {bet_string}. "
+                + f"Одергивая руку, {name} надется, что никто не заметил такой глупости."
             )
         if sex == "female":
-            phrase = (f"{name} подумала незаметно изменить свою ставку, но не прошла проверку ловкости. " +
-            f"На столе остались {bet_string}")
+            phrase = (
+                f"{name} подумала незаметно изменить свою ставку, но не прошла проверку ловкости. "
+                + f"На столе остались лежать {bet_string}."
+            )
         return phrase
 
     def not_a_player(name: str) -> str:
@@ -197,7 +195,7 @@ class GamePhrase:
         if sex == "female":
             return f"{name} наблюдает, как в её сторону летят карты."
         if sex == "male":
-            return f"{name} слышит, что объевлен его ход."
+            return f"{name} слышит, что объявлен его ход."
 
     def not_your_turn(name: str) -> str:
         return f"{name} пытается встрять без очереди, но тень игнорирует такое нахальство"
@@ -262,4 +260,77 @@ class GamePhrase:
             "Видя ваши дырявые карманы, призрак тяжело вздыхает.%0A"
             + f"{name} вдруг обнаруживает у себя кошелек, в котором сверкает {start_cash_string}."
         )
+        return phrase
+
+    def chat_stat(games_played: int, casino_cash: int) -> str:
+        if games_played == 0:
+            games_played_string = "Тень укоризненно сообщает, что вы пока ни разу не сыграли с ней."
+            casino_cash_string = "Банк казино пустует."
+            return games_played_string + "%0A" + casino_cash_string
+
+        games_played_string = (
+            str(games_played)
+            + " "
+            + get_noun_ending(
+                games_played,
+                "игра проведена в казино.",
+                "игры сыграны.",
+                "игр уже проведено в этой таверне.",
+            )
+        )
+        if casino_cash == 0:
+            casino_cash_string = "На счету казино пусто."
+        if casino_cash < 0:
+            casino_cash_string = (
+                f"В бюджете казино образовался долг в {abs(casino_cash)} "
+                + get_noun_ending(
+                    casino_cash, "монету.", "золотых монеты.", "золотых монет."
+                )
+            )
+        else:
+            casino_cash_string = (
+                f"Казино обогатилась на {casino_cash} "
+                + get_noun_ending(
+                    casino_cash, "монету.", "золотых монеты.", "золотых монет."
+                )
+            )
+
+        return games_played_string + "%0A" + casino_cash_string
+
+    def player_stat(
+        name: str,
+        sex: str,
+        games_played: int,
+        games_won: int,
+        games_lost: int,
+        cash: int,
+    ) -> str:
+        if games_played == 0:
+            if sex == "female":
+                return f"{name} тени не знакома, и она ничего не может о ней сказать."
+            else:
+                return f"{name} тени не знаком, и она ничего не может о нем сказать."
+
+        games_played_string = (
+            str(games_played)
+            + " "
+            + get_noun_ending(games_played, "игру", "игры", "игр")
+        )
+        cash_string = (
+            str(cash)
+            + " "
+            + get_noun_ending(
+                cash, "золотой", "золотых монеты", "золотых монет"
+            )
+        )
+
+        if sex == "female":
+            phrase = f"{name} сыграла {games_played_string}.%0A"
+            phrase += f"Проиграно {games_lost}, выиграно {games_won}.%0A"
+            phrase += f"У нее в кошельке {cash_string}."
+        else:
+            phrase = f"{name} сыграл {games_played_string}.%0A"
+            phrase += f"Проиграно {games_lost}, выиграно {games_won}.%0A"
+            phrase += f"У него в кошельке {cash_string}."
+
         return phrase
