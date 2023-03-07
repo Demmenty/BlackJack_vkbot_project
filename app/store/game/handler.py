@@ -168,6 +168,16 @@ class GameHandler:
             vk_user = await self.app.store.game.get_vk_user_by_player(player.id)
             await self.notifier.not_your_turn(update.peer_id, vk_user.name)
             return
+        
+        print()
+        print("список тасок", self.app.store.game_manager.tasks)
+        for task in self.app.store.game_manager.tasks:
+            if task.game_id == game.id:
+                task.task.cancel()
+                break
+        self.app.store.game_manager.tasks.remove(task)
+        print("список тасок", self.app.store.game_manager.tasks)
+        print()
 
         await self.app.store.game_manager.deal_cards_to_player(
             1, update.peer_id, game.id, player.id
@@ -192,8 +202,11 @@ class GameHandler:
             vk_user = await self.app.store.game.get_vk_user_by_player(player.id)
             await self.notifier.not_your_turn(update.peer_id, vk_user.name)
             return
+        
+        for task in self.app.store.game_manager.tasks:
+            if task.game_id == game.id:
+                task.task.cancel()
 
-        # notify ?
         await self.app.store.game_manager.set_next_player_turn(
             update.peer_id, game.id
         )

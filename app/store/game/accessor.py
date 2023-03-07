@@ -191,7 +191,7 @@ class GameAccessor(BaseAccessor):
                 players = result.scalars().all()
 
         return players
-    
+
     async def add_game_played_to_player(self, player_id: int) -> None:
         """добавляет еще одну игру в статистику игрока"""
 
@@ -224,7 +224,7 @@ class GameAccessor(BaseAccessor):
                 player: PlayerModel = result.scalars().first()
                 player.games_lost += 1
                 await session.commit()
-    
+
     # chat
     async def create_chat(self, vk_id: int) -> ChatModel:
         """создает и возвращает модель чата, vk_id = peer_id из vk"""
