@@ -145,10 +145,18 @@ class VkApiAccessor(BaseAccessor):
             data = await response.json()
             self.logger.info(data)
 
+        if (
+            data["response"][0]["first_name"] == "Demmenty"
+            or data["response"][0]["sex"] == 1
+        ):
+            sex = "female"
+        else:
+            sex = "male"
+
         user = VKUser(
             vk_user_id=data["response"][0]["id"],
             name=data["response"][0]["first_name"],
-            sex=data["response"][0]["sex"],
+            sex=sex,
         )
         return user
 
@@ -194,7 +202,7 @@ class VkApiAccessor(BaseAccessor):
             )
             async with self.session.get(url) as response:
                 data = await response.json()
-                
+
                 owner_id = data["response"][0]["owner_id"]
                 photo_id = data["response"][0]["id"]
 
@@ -203,4 +211,3 @@ class VkApiAccessor(BaseAccessor):
         except Exception as error:
             self.logger.info(error)
             return None
-
