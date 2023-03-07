@@ -2,6 +2,7 @@ import typing
 from logging import getLogger
 
 from app.store.bot.phrases import BotPhrase
+from app.store.bot.notifications import BotNotifier
 from app.store.vk_api.dataclasses import BotMessage, Update
 
 if typing.TYPE_CHECKING:
@@ -13,6 +14,7 @@ class BotManager:
 
     def __init__(self, app: "Application"):
         self.app = app
+        self.notifier = BotNotifier(app)
         self.logger = getLogger("handler")
 
     async def handle_updates(self, updates: list[Update]) -> None:
@@ -41,16 +43,19 @@ class BotManager:
     async def handle_chat_invite(self, update: Update) -> None:
         """обработка приглашения в беседу"""
 
-        # TODO game_is_on -> recovery
-        # TODO game_is_off > is_last_game -> offer
-        # TODO game_is_off > not is_last_game -> greeting + offer
+        game_on = await self.app.store.game.is_game_on(update.peer_id)
 
-        msg = BotMessage(
-            peer_id=update.peer_id,
-            text=BotPhrase.meeting(),
-        )
-        await self.app.store.vk_api.send_message(msg)
-        await self.app.store.game_handler.send_game_offer(update)
+        if game_on:
+            # TODO self.app.store.game_manager.recover(update.peer_id)
+            return
+
+        game = await self.app.store.game.get_game_by_vk_id(update.peer_id)
+        if game:
+            await self.notifier.meeting(update.peer_id, again=True)
+        else:
+            await self.notifier.meeting(update.peer_id)
+
+        await self.app.store.game_handler.send_game_offer(update=update)
 
     async def handle_chat_msg(self, update: Update) -> None:
         """обработка сообщения в беседе"""
@@ -65,7 +70,7 @@ class BotManager:
         game_handlers = {
             "начать": self.app.store.game_handler.start_game,
             "правила": self.app.store.game_handler.send_game_rules,
-            "прекратить": self.app.store.game_handler.cancel_game,
+            "прекратить это безумие": self.app.store.game_handler.cancel_game,
             "отмена": self.app.store.game_handler.abort_game,
             "играю": self.app.store.game_handler.register_player,
             "пас": self.app.store.game_handler.unregister_player,
