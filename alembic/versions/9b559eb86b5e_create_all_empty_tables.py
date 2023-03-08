@@ -1,8 +1,8 @@
 """create all empty tables
 
-Revision ID: 79b24f42d574
+Revision ID: 9b559eb86b5e
 Revises: 
-Create Date: 2023-03-05 18:19:25.235161
+Create Date: 2023-03-08 21:25:18.983403
 
 """
 import sqlalchemy as sa
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = '79b24f42d574'
+revision = '9b559eb86b5e'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -26,14 +26,17 @@ def upgrade() -> None:
     )
     op.create_table('chat',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('vk_peer_id', sa.Integer(), nullable=False),
+    sa.Column('vk_id', sa.Integer(), nullable=False),
+    sa.Column('casino_cash', sa.Integer(), nullable=False),
+    sa.Column('games_played', sa.Integer(), nullable=False),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('vk_peer_id')
+    sa.UniqueConstraint('vk_id')
     )
     op.create_table('vk_user',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('vk_user_id', sa.Integer(), nullable=False),
+    sa.Column('vk_id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(), nullable=False),
+    sa.Column('sex', sa.String(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('game',
@@ -53,6 +56,9 @@ def upgrade() -> None:
     sa.Column('bet', sa.Integer(), nullable=True),
     sa.Column('hand', sa.JSON(), nullable=False),
     sa.Column('is_active', sa.Boolean(), nullable=False),
+    sa.Column('games_played', sa.Integer(), nullable=False),
+    sa.Column('games_won', sa.Integer(), nullable=False),
+    sa.Column('games_lost', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['game_id'], ['game.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['user_id'], ['vk_user.id'], ),
     sa.PrimaryKeyConstraint('id')
