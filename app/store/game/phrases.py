@@ -35,7 +35,7 @@ class GamePhrase:
     def game_canceled(name: str) -> str:
         return (
             f"Угрожая святой водой, {name} заставляет тень немедленно закончить игру.%0A"
-            "Пораженный такой наглостью, призрачный дилер всё же подчиняется."
+            "Пораженный такой наглостью, нежить всё же подчиняется."
         )
 
     def rules(name: str) -> str:
@@ -56,6 +56,9 @@ class GamePhrase:
         )
 
         return rules
+
+    def all_play() -> str:
+        return "Никто не остался в стороне, и игра начинается!"
 
     def no_players() -> str:
         return "Тень печально обводит взором пустой стол. Вам её даже жалко."
@@ -180,9 +183,10 @@ class GamePhrase:
         )
 
     def no_player_bet(name: str) -> str:
-        return (
-            f"Ударом высокоточного вихря тени {name} вышвыривается из-за стола."
-        )
+        return f"Ударом высокоточного вихря {name} вышвыривается из-за стола."
+
+    def all_bets_placed() -> str:
+        return "Зловеще улыбаясь, тень объявляет, что все ставки сделаны."
 
     def wrong_state() -> str:
         return "Тень недоумевающе покорежилась."
@@ -200,7 +204,7 @@ class GamePhrase:
             return f"{name} слышит, что объявлен его ход."
 
     def not_your_turn(name: str) -> str:
-        return f"{name} пытается встрять без очереди, но тень игнорирует такое нахальство"
+        return f"{name} пытается встрять без очереди, но тень игнорирует такое нахальство."
 
     def cards_received(cards: list[str]) -> str:
         return f"Следующие карты появились на столе: %0A" + " ".join(cards)
@@ -291,7 +295,7 @@ class GamePhrase:
             )
         else:
             casino_cash_string = (
-                f"Казино обогатилась на {casino_cash} "
+                f"Казино обогатилось на {casino_cash} "
                 + get_noun_ending(
                     casino_cash, "монету.", "золотых монеты.", "золотых монет."
                 )
