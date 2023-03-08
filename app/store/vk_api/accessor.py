@@ -160,6 +160,42 @@ class VkApiAccessor(BaseAccessor):
         )
         return user
 
+    async def get_chat_users(self, vk_chat_id: int) -> list[VKUser] | None:
+        """возвращает список участников чата или None, если не получилось"""
+        url = self._build_query(
+            host=API_PATH,
+            method="messages.getConversationMembers",
+            params={
+                "peer_id": vk_chat_id,
+                "fields": "sex",
+                "access_token": self.app.config.bot.token,
+            },
+        )
+        async with self.session.get(url) as response:
+            data = await response.json()
+            self.logger.info(data)
+
+        if data.get("error"):
+            return None
+
+        users = data["response"]["profiles"]
+        users_list = []
+
+        for user in users:
+            if user["first_name"] == "Demmenty" or user["sex"] == 1:
+                sex = "female"
+            else:
+                sex = "male"
+
+            user = VKUser(
+                vk_user_id=user["id"],
+                name=user["first_name"],
+                sex=sex,
+            )
+            users_list.append(user)
+
+        return users_list
+
     async def _get_upload_url(self) -> str:
         """получение адреса для загрузки вложения"""
 
