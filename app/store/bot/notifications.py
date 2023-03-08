@@ -1,10 +1,7 @@
 import typing
 
-from app.store.vk_api.dataclasses import Action, BotMessage, Button, Keyboard
-
 from app.store.bot.phrases import BotPhrase
-from app.store.game.phrases import GamePhrase
-from app.store.game.buttons import GameButton
+from app.store.vk_api.dataclasses import BotMessage
 
 if typing.TYPE_CHECKING:
     from app.web.app import Application
