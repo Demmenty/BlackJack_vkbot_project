@@ -1,11 +1,11 @@
 import random
 import typing
-from asyncio import create_task, sleep as asleep
+from asyncio import create_task
 from logging import getLogger
 
 from app.store.game.decks import EndlessDeck
 from app.store.game.notifications import GameNotifier
-from app.store.game.dataclasses import GameWaitTask
+from app.store.game.timer import GameTimerManager
 
 if typing.TYPE_CHECKING:
     from app.web.app import Application
@@ -18,9 +18,9 @@ class GameManager:
         self.app = app
         self.notifier = GameNotifier(app)
         self.deck = EndlessDeck()
-        self.logger = getLogger("handler")
-        self.tasks: list[GameWaitTask] = []
-    
+        self.logger = getLogger("game manager")
+        self.timer = GameTimerManager()
+
     async def start_game(self, vk_id: int) -> None:
         """запускает новую игру, направляет на стадию сбора игроков"""
 
@@ -35,24 +35,20 @@ class GameManager:
 
         await self.define_players(vk_id, game.id)
 
-    async def define_players(
-        self,
-        vk_id: int,
-        game_id: int,
-    ) -> None:
-        """запускает ожидание игроков"""
+    async def define_players(self, vk_id: int, game_id: int) -> None:
+        """запускает стадию набора игроков"""
 
         await self.app.store.game.set_game_state(game_id, "define_players")
         await self.notifier.waiting_players(vk_id)
 
-        create_task(self._waiting_players(vk_id, game_id))
-        # TODO организовать какой-то там коллбек
+        create_task(
+            self.timer.start_timer(
+                sec=30, next_method=self.collect_players(vk_id, game_id)
+            )
+        )
 
-    async def _waiting_players(self, vk_id: int, game_id: int) -> None:
-        """ждет, пока отметятся игроки,
-        тогда направляет на стадию ставок"""
-
-        await asleep(15)
+    async def collect_players(self, vk_id: int, game_id: int) -> None:
+        """проверяет наличие игроков и направляет на стадию ставок, если есть"""
 
         players = await self.app.store.game.get_active_players(game_id)
 
@@ -75,15 +71,15 @@ class GameManager:
         await self.app.store.game.set_game_state(game_id, "betting")
         await self.notifier.waiting_bets(vk_id)
 
-        create_task(self._waiting_bets(vk_id, game_id))
+        create_task(
+            self.timer.start_timer(
+                sec=60, next_method=self.collect_bets(vk_id, game_id)
+            )
+        )
 
-        # TODO организовать какой-то там коллбек
-
-    async def _waiting_bets(self, vk_id: int, game_id: int) -> None:
-        """ждет, пока игроки не сделают ставки,
-        тогда направляет на стадию раздачи карт"""
-        # TODO поставить таймеры побольше + отменять их, если всех дождались
-        await asleep(30)
+    async def collect_bets(self, vk_id: int, game_id: int) -> None:
+        """проверяет наличие ставок игроков, инактивирует непоставивших,
+        и направляет на стадию раздачи, если есть поставившие"""
 
         players = await self.app.store.game.get_active_players(game_id)
 
@@ -112,7 +108,6 @@ class GameManager:
 
         players = await self.app.store.game.get_active_players(game_id)
 
-        # TODO возможно, убрать показ игроков тут, подумать
         # TODO показывать игроков тут, если изменились
         # players_names: list[str] = []
         # for player in players:
@@ -140,9 +135,9 @@ class GameManager:
         await self.app.store.game.add_cards_to_player(player_id, cards)
         await self.notifier.cards_received(vk_id, cards)
 
-        await self._check_player_hand(vk_id, game_id, player_id)
+        await self.check_player_hand(vk_id, game_id, player_id)
 
-    async def _check_player_hand(
+    async def check_player_hand(
         self, vk_id: int, game_id: int, player_id: int
     ) -> None:
         """проверяет сумму карт в руке игрока и делает выводы"""
@@ -163,6 +158,7 @@ class GameManager:
         if player_points > 21:
             await self.notifier.player_overflow(vk_id)
             await self.set_player_loss(vk_id, player_id)
+            # TODO check cash
             await self.set_next_player_turn(vk_id, game_id)
             return
 
@@ -170,43 +166,12 @@ class GameManager:
             vk_user = await self.app.store.game.get_vk_user_by_player(player.id)
             await self.notifier.offer_a_card(vk_id, vk_user.name)
 
-            task = GameWaitTask(
-                game_id=game_id,
-                type="waiting_turn",
-                task=create_task(self._waiting_player_turn(vk_id, game_id, player.id))
+            create_task(
+                self.timer.start_timer(
+                    sec=60,
+                    next_method=self.set_next_player_turn(vk_id, game_id),
+                )
             )
-            self.tasks.append(task)
-
-    async def _waiting_player_turn(
-        self, vk_id: int, game_id: int, player_id: int
-    ) -> None:
-        """ждет, пока игрок примет решение, брать еще карту или остановиться.
-        таймер вышел = остановиться"""
-        # TODO отменять таймер, если походил
-        player = await self.app.store.game.get_player_by_id(player_id)
-        start_card_amount = len(player.hand["cards"])
-
-        await asleep(30)
-
-        game = await self.app.store.game.get_game_by_id(game_id)
-        player = await self.app.store.game.get_player_by_id(player_id)
-        curr_card_amount = len(player.hand["cards"])
-
-        if (
-            curr_card_amount == start_card_amount
-            and game.current_player_id == True
-        ):
-            vk_user = await self.app.store.game.get_vk_user_by_player(player.id)
-            await self.notifier.no_player_card_move(
-                vk_id, vk_user.name, vk_user.sex
-            )
-            await self.set_next_player_turn(vk_id, game.id)
-
-        for task in self.app.store.game_manager.tasks:
-            if task.game_id == game.id:
-                task.task.cancel()
-                break
-        self.app.store.game_manager.tasks.remove(task)
 
     async def set_next_player_turn(self, vk_id: int, game_id: int) -> None:
         """запускает раздачу карт следующему игроку"""
@@ -235,7 +200,7 @@ class GameManager:
         await self.deal_cards_to_player(2, vk_id, game_id, player.id)
 
     async def deal_to_dealer(self, vk_id: int, game_id: int) -> None:
-        """запускает раздачу карты дилеру"""
+        """запускает раздачу карт дилеру"""
 
         await self.notifier.deal_to_dealer(vk_id)
 
@@ -324,10 +289,8 @@ class GameManager:
         """заканчивает игру"""
 
         await self.app.store.game.set_game_state(game_id, "inactive")
+
         await self.notifier.game_ended(vk_id)
-
-        # TODO статистика
-
         await self.notifier.game_offer(vk_id, again=True)
 
     async def abort_game(
@@ -336,9 +299,8 @@ class GameManager:
         """метод отменяет игру (при поиске игроков или ожидании ставок)"""
 
         game = await self.app.store.game.get_game_by_id(game_id)
+        await self.timer.end_timer(game.id)
         players = await self.app.store.game.get_active_players(game_id)
-
-        # TODO стоп таска waiting и betting
 
         for player in players:
             if player.bet:
@@ -355,9 +317,8 @@ class GameManager:
     ) -> None:
         """удивительно, но этот метод останавливает игру"""
 
-         # TODO стоп таски
-
         game = await self.app.store.game.get_game_by_id(game_id)
+        await self.timer.end_timer(game.id)
         players = await self.app.store.game.get_active_players(game_id)
 
         await self.app.store.game.set_current_player(None, game.id)

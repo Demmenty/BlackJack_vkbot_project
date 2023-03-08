@@ -3,13 +3,13 @@ from logging import getLogger
 
 from app.store.game.buttons import GameButton
 from app.store.game.decks import EndlessDeck
-from app.store.game.notifications import GameNotifier
-from app.store.game.phrases import GamePhrase
 from app.store.game.decorators import (
     game_must_be_off,
     game_must_be_on,
     game_must_be_on_state,
 )
+from app.store.game.notifications import GameNotifier
+from app.store.game.phrases import GamePhrase
 from app.store.vk_api.dataclasses import BotMessage, Keyboard, Update
 
 if typing.TYPE_CHECKING:
@@ -23,13 +23,17 @@ class GameHandler:
         self.app = app
         self.notifier = GameNotifier(app)
         self.deck = EndlessDeck()
-        self.logger = getLogger("handler")
+        self.logger = getLogger("game handler")
 
     @game_must_be_off
     async def send_game_offer(self, update: Update) -> None:
         """отправляет предложение поиграть"""
 
-        await self.notifier.game_offer(update.peer_id)
+        chat = await self.app.store.game.get_chat_by_vk_id(update.peer_id)
+        if chat and chat.games_played:
+            await self.notifier.game_offer(update.peer_id, again=True)
+        else:
+            await self.notifier.game_offer(update.peer_id)
 
     @game_must_be_off
     async def start_game(self, update: Update) -> None:
@@ -80,6 +84,20 @@ class GameHandler:
 
         await self.app.store.game.set_player_state(player.id, True)
         await self.notifier.player_registered(update.peer_id, vk_user.name)
+
+        chat_users = await self.app.store.vk_api.get_chat_users(update.peer_id)
+        if not chat_users:
+            return
+
+        active_players = await self.app.store.game.get_active_players(game.id)
+
+        # TODO не учитывать нищебродов
+        if len(active_players) == len(chat_users):
+            await self.app.store.game_manager.timer.end_timer(game.id)
+            await self.notifier.all_play(update.peer_id)
+            await self.app.store.game_manager.start_betting(
+                update.peer_id, game.id
+            )
 
     @game_must_be_on
     @game_must_be_on_state("define_players", "betting")
@@ -147,12 +165,19 @@ class GameHandler:
         await self.app.store.game.set_player_bet(player.id, bet)
         await self.notifier.bet_accepted(update.peer_id, vk_user.name, bet)
 
-        # TODO check: все игроки поставили -> cancel waiting_bets -> start_dealing
+        active_players = await self.app.store.game.get_active_players(game.id)
+        for player in active_players:
+            if not player.bet:
+                return
+
+        await self.app.store.game_manager.timer.end_timer(game.id)
+        await self.notifier.all_bets_placed(update.peer_id)
+        await self.app.store.game_manager.start_dealing(update.peer_id, game.id)
 
     @game_must_be_on
     @game_must_be_on_state("dealing")
     async def deal_more_card(self, update: Update) -> None:
-        """выдает игроку еще одну карту"""
+        """останавливает таймер и выдает игроку еще одну карту"""
 
         game = await self.app.store.game.get_game_by_vk_id(update.peer_id)
         player = await self.app.store.game.get_player_by_vk_and_game(
@@ -168,13 +193,8 @@ class GameHandler:
             vk_user = await self.app.store.game.get_vk_user_by_player(player.id)
             await self.notifier.not_your_turn(update.peer_id, vk_user.name)
             return
-        
-        for task in self.app.store.game_manager.tasks:
-            if task.game_id == game.id:
-                task.task.cancel()
-                break
-        self.app.store.game_manager.tasks.remove(task)
 
+        await self.app.store.game_manager.timer.end_timer(game.id)
         await self.app.store.game_manager.deal_cards_to_player(
             1, update.peer_id, game.id, player.id
         )
@@ -182,7 +202,7 @@ class GameHandler:
     @game_must_be_on
     @game_must_be_on_state("dealing")
     async def stop_dealing_cards(self, update: Update) -> None:
-        """останавливает раздачу карт игроку и передает ход следующему"""
+        """останавливает раздачу карт игроку, останавливает таймер и передает ход следующему"""
 
         game = await self.app.store.game.get_game_by_vk_id(update.peer_id)
         player = await self.app.store.game.get_player_by_vk_and_game(
@@ -198,13 +218,8 @@ class GameHandler:
             vk_user = await self.app.store.game.get_vk_user_by_player(player.id)
             await self.notifier.not_your_turn(update.peer_id, vk_user.name)
             return
-        
-        for task in self.app.store.game_manager.tasks:
-            if task.game_id == game.id:
-                task.task.cancel()
-                break
-        self.app.store.game_manager.tasks.remove(task)
 
+        await self.app.store.game_manager.timer.end_timer(game.id)
         await self.app.store.game_manager.set_next_player_turn(
             update.peer_id, game.id
         )
@@ -255,9 +270,10 @@ class GameHandler:
     @game_must_be_on
     @game_must_be_on_state("define_players", "betting")
     async def abort_game(self, update: Update) -> None:
-        """отменяет игру (никаких результатов)"""
+        """отменяет игру"""
 
         game = await self.app.store.game.get_game_by_vk_id(update.peer_id)
+
         causer = await self.app.store.vk_api.get_user(update.from_id)
         await self.app.store.game_manager.abort_game(
             update.peer_id, game.id, causer.name
@@ -266,9 +282,10 @@ class GameHandler:
     @game_must_be_on
     @game_must_be_on_state("dealing")
     async def cancel_game(self, update: Update) -> None:
-        """досрочно останавливает игру (с выводом результатов)"""
+        """досрочно останавливает игру"""
 
         game = await self.app.store.game.get_game_by_vk_id(update.peer_id)
+
         causer = await self.app.store.vk_api.get_user(update.from_id)
         await self.app.store.game_manager.stop_game(
             update.peer_id, game.id, causer.name
