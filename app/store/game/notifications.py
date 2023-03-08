@@ -127,6 +127,15 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
+    async def all_play(self, peer_id: int) -> None:
+        """уведомляет чат, что все присутствующие согласились играть"""
+
+        msg = BotMessage(
+            peer_id=peer_id,
+            text=GamePhrase.all_play(),
+        )
+        await self.app.store.vk_api.send_message(msg)
+
     async def no_players(self, peer_id: int) -> None:
         """уведомляет чат о том, что никто не согласился играть"""
 
@@ -160,10 +169,7 @@ class GameNotifier:
                         Button(action=Action(label="300")),
                         Button(action=Action(label="500")),
                     ],
-                    [
-                        GameButton.all_in,
-                        GameButton.show_cash,
-                    ],
+                    [GameButton.all_in, GameButton.show_cash, GameButton.abort],
                 ]
             ).json,
         )
@@ -213,6 +219,15 @@ class GameNotifier:
         msg = BotMessage(
             peer_id=peer_id,
             text=GamePhrase.bet_accepted_already(username, bet, sex),
+        )
+        await self.app.store.vk_api.send_message(msg)
+
+    async def all_bets_placed(self, peer_id: int) -> None:
+        """уведомляет чат, что ставки сделаны, ставок больше нет"""
+
+        msg = BotMessage(
+            peer_id=peer_id,
+            text=GamePhrase.all_bets_placed(),
         )
         await self.app.store.vk_api.send_message(msg)
 
@@ -298,9 +313,11 @@ class GameNotifier:
                     [
                         GameButton.one_more_card,
                         GameButton.enough_cards,
-                        GameButton.show_hand],
-                        [GameButton.stop,
-                    ]
+                        GameButton.show_hand,
+                    ],
+                    [
+                        GameButton.stop,
+                    ],
                 ]
             ).json,
         )
