@@ -1,8 +1,8 @@
 import typing
 from logging import getLogger
 
-from app.store.bot.phrases import BotPhrase
 from app.store.bot.notifications import BotNotifier
+from app.store.bot.phrases import BotPhrase
 from app.store.vk_api.dataclasses import BotMessage, Update
 
 if typing.TYPE_CHECKING:
@@ -93,7 +93,7 @@ class BotManager:
         очищенным от обращения, пробелов и в нижнем регистре"""
 
         cleaned_text = (
-            text.replace("[club218753438|@shadow_dementia]", "").strip().lower()
+            text.replace("[club218753438|@shadow_dementia]", "").strip(" ,.!").lower()
         )
 
         return cleaned_text
