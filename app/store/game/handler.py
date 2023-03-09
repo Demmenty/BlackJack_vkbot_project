@@ -1,7 +1,6 @@
 import typing
 from logging import getLogger
 
-from app.store.game.buttons import GameButton
 from app.store.game.decks import EndlessDeck
 from app.store.game.decorators import (
     game_must_be_off,
@@ -10,7 +9,7 @@ from app.store.game.decorators import (
 )
 from app.store.game.notifications import GameNotifier
 from app.store.game.phrases import GamePhrase
-from app.store.vk_api.dataclasses import BotMessage, Keyboard, Update
+from app.store.vk_api.dataclasses import BotMessage, Update
 
 if typing.TYPE_CHECKING:
     from app.web.app import Application
@@ -60,44 +59,55 @@ class GameHandler:
         player = await self.app.store.game.get_player_by_vk_and_game(
             update.from_id, game.id
         )
+
         if not player:
             vk_user = await self.app.store.game.create_vk_user(update.from_id)
             player = await self.app.store.game.create_player(
                 vk_user.id, game.id
             )
-
             await self.notifier.start_cash_given(update.peer_id, vk_user.name)
-            await self.notifier.player_registered(update.peer_id, vk_user.name)
-            return
 
-        vk_user = await self.app.store.game.get_vk_user_by_player(player.id)
+        else:
+            vk_user = await self.app.store.game.get_vk_user_by_player(player.id)
 
-        if player.cash == 0:
-            await self.notifier.no_cash(update.peer_id, vk_user.name)
-            return
+            if player.cash == 0:
+                await self.notifier.no_cash(update.peer_id, vk_user.name)
+                return
 
-        if player.is_active:
-            await self.notifier.player_registered_already(
-                update.peer_id, vk_user.name
-            )
-            return
+            if player.is_active:
+                await self.notifier.player_registered_already(
+                    update.peer_id, vk_user.name
+                )
+                return
 
-        await self.app.store.game.set_player_state(player.id, True)
+            await self.app.store.game.set_player_state(player.id, True)
+
         await self.notifier.player_registered(update.peer_id, vk_user.name)
 
-        chat_users = await self.app.store.vk_api.get_chat_users(update.peer_id)
-        if not chat_users:
-            return
+        losers = await self.app.store.game.count_losers(game.id)
+        all_play = await self._is_all_play(update.peer_id, game.id, losers)
 
-        active_players = await self.app.store.game.get_active_players(game.id)
-
-        # TODO не учитывать нищебродов
-        if len(active_players) == len(chat_users):
+        if all_play:
             await self.app.store.game_manager.timer.end_timer(game.id)
-            await self.notifier.all_play(update.peer_id)
+            await self.notifier.all_play(update.peer_id, losers)
             await self.app.store.game_manager.start_betting(
                 update.peer_id, game.id
             )
+
+    async def _is_all_play(
+        self, vk_chat_id: int, game_id: int, losers: int
+    ) -> bool:
+        """предикат, проверяющий, все ли участники чата, у которых остался cash, согласились играть"""
+
+        chat_users = await self.app.store.vk_api.get_chat_users(vk_chat_id)
+        if not chat_users:
+            return False
+
+        active_players = await self.app.store.game.get_active_players(game_id)
+        if not active_players:
+            return False
+
+        return len(active_players) == (len(chat_users) - losers)
 
     @game_must_be_on
     @game_must_be_on_state("define_players", "betting")
