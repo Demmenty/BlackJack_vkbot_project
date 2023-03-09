@@ -50,7 +50,10 @@ class GameManager:
 
         create_task(
             self.timer.start_timer(
-                sec=30, next_method=self.collect_players(vk_id, game_id)
+                sec=30,
+                vk_id=vk_id,
+                game_id=game_id,
+                next_method=self.collect_players
             )
         )
 
@@ -84,7 +87,10 @@ class GameManager:
 
         create_task(
             self.timer.start_timer(
-                sec=60, next_method=self.collect_bets(vk_id, game_id)
+                sec=60, 
+                vk_id=vk_id,
+                game_id=game_id,
+                next_method=self.collect_bets
             )
         )
 
@@ -192,7 +198,9 @@ class GameManager:
             create_task(
                 self.timer.start_timer(
                     sec=60,
-                    next_method=self.set_next_player_turn(vk_id, game_id),
+                    vk_id=vk_id,
+                    game_id=game_id,
+                    next_method=self.set_next_player_turn,
                 )
             )
 
@@ -329,6 +337,7 @@ class GameManager:
 
         vk_user = await self.app.store.game.get_vk_user_by_player(player_id)
         await self.notifier.player_loss(vk_id, vk_user.name)
+        # TODO + if cash стало 0 -> notifier.cash_spent
 
     async def end_game(self, vk_id: int, game_id: int) -> None:
         """заканчивает игру"""

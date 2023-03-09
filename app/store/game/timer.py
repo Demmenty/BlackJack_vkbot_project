@@ -11,14 +11,14 @@ class GameTimerManager:
         # здесь можно лучше typehint сделать?..
         self.tasks: dict = {}
 
-    async def start_timer(self, sec: int, next_method: Coroutine) -> None:
+    async def start_timer(
+        self, sec: int, vk_id: int, game_id: int, next_method: Coroutine
+    ) -> None:
         """запускает фоновое ожидание и регистрирует его.
         если таймер вышел, а ожидание не cancel - запускает next_method и удаляет запись.
         """
 
         try:
-            game_id = next_method.cr_frame.f_locals.get("game_id")
-
             task = GameWaitTask(
                 game_id=game_id,
                 timer=create_task(asleep(sec)),
@@ -31,7 +31,7 @@ class GameTimerManager:
 
             if not task.timer.cancelled():
                 self.tasks[game_id].remove(task)
-                await next_method
+                await next_method(vk_id, game_id)
 
         except Exception as error:
             print("!!! start_timer error !!!", error)
@@ -40,7 +40,6 @@ class GameTimerManager:
         """останавливает активное фоновое ожидание в игре.
         удаляет запись о нём соответственно id игры.
         """
-        # хорошо, что в одной игре может быть только один активный таймер...
 
         if not self.tasks.get(game_id):
             return
