@@ -127,12 +127,12 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
-    async def all_play(self, peer_id: int) -> None:
+    async def all_play(self, peer_id: int, losers: int) -> None:
         """уведомляет чат, что все присутствующие согласились играть"""
 
         msg = BotMessage(
             peer_id=peer_id,
-            text=GamePhrase.all_play(),
+            text=GamePhrase.all_play(losers),
         )
         await self.app.store.vk_api.send_message(msg)
 
