@@ -3,6 +3,7 @@ import typing
 from asyncio import create_task
 from logging import getLogger
 
+from app.game.states import GameState
 from app.store.game.decks import EndlessDeck
 from app.store.game.notifications import GameNotifier
 from app.store.game.timer import GameTimerManager
@@ -35,14 +36,16 @@ class GameManager:
 
         await self.notifier.game_starting(vk_id)
 
-        await self.define_players(vk_id, game.id)
+        await self.gathering_players(vk_id, game.id)
 
-    async def define_players(self, vk_id: int, game_id: int) -> None:
+    async def gathering_players(self, vk_id: int, game_id: int) -> None:
         """запускает стадию набора игроков"""
 
-        self.logger.info(f"define_players, vk_id={vk_id}, game_id={game_id}\n")
+        self.logger.info(
+            f"gathering_players, vk_id={vk_id}, game_id={game_id}\n"
+        )
 
-        await self.app.store.game.set_game_state(game_id, "define_players")
+        await self.app.store.game.set_game_state(game_id, GameState.gathering)
         await self.notifier.waiting_players(vk_id)
 
         create_task(
@@ -76,7 +79,7 @@ class GameManager:
 
         self.logger.info(f"start_betting, vk_id={vk_id}, game_id={game_id}\n")
 
-        await self.app.store.game.set_game_state(game_id, "betting")
+        await self.app.store.game.set_game_state(game_id, GameState.betting)
         await self.notifier.waiting_bets(vk_id)
 
         create_task(
@@ -115,7 +118,7 @@ class GameManager:
 
         self.logger.info(f"start_dealing, vk_id={vk_id}, game_id={game_id}\n")
 
-        await self.app.store.game.set_game_state(game_id, "dealing")
+        await self.app.store.game.set_game_state(game_id, GameState.dealing)
         await self.notifier.dealing_started(vk_id)
 
         players = await self.app.store.game.get_active_players(game_id)
@@ -247,6 +250,8 @@ class GameManager:
 
         self.logger.info(f"sum_up_results, vk_id={vk_id}, game_id={game_id}\n")
 
+        await self.app.store.game.set_game_state(game_id, GameState.results)
+
         players = await self.app.store.game.get_active_players(game_id)
         dealer_points = await self.app.store.game.get_dealer_points(game_id)
 
@@ -330,7 +335,7 @@ class GameManager:
 
         self.logger.info(f"end_game, vk_id={vk_id}, game_id={game_id}\n")
 
-        await self.app.store.game.set_game_state(game_id, "inactive")
+        await self.app.store.game.set_game_state(game_id, GameState.inactive)
 
         await self.notifier.game_ended(vk_id)
         await self.notifier.game_offer(vk_id, again=True)
@@ -339,10 +344,12 @@ class GameManager:
         self, vk_id: int, game_id: int, causer: str | None = None
     ) -> None:
         """метод отменяет игру (при поиске игроков или ожидании ставок)"""
-
+        # TODO удалить этот метод, слишком похож на stop_game
         self.logger.info(
             f"abort_game, vk_id={vk_id}, game_id={game_id}, causer={causer}\n"
         )
+
+        await self.app.store.game.set_game_state(game_id, GameState.inactive)
 
         game = await self.app.store.game.get_game_by_id(game_id)
         await self.timer.end_timer(game.id)
@@ -355,7 +362,6 @@ class GameManager:
                 await self.app.store.game.clear_player_hand(player.id)
             await self.app.store.game.set_player_state(player.id, False)
 
-        await self.app.store.game.set_game_state(game.id, "inactive")
         await self.notifier.game_aborted(vk_id, causer)
 
     async def stop_game(
@@ -366,6 +372,8 @@ class GameManager:
         self.logger.info(
             f"stop_game, vk_id={vk_id}, game_id={game_id}, causer={causer}\n"
         )
+
+        await self.app.store.game.set_game_state(game_id, GameState.inactive)
 
         game = await self.app.store.game.get_game_by_id(game_id)
         await self.timer.end_timer(game.id)
@@ -379,7 +387,6 @@ class GameManager:
                 await self.app.store.game.clear_player_hand(player.id)
             await self.app.store.game.set_player_state(player.id, False)
 
-        await self.app.store.game.set_game_state(game.id, "inactive")
         await self.notifier.game_canceled(vk_id, causer)
 
     async def send_statistic(self, vk_chat_id: int, vk_user_id: int) -> None:
@@ -418,4 +425,5 @@ class GameManager:
     async def recover(self) -> None:
         """восстанавливает игровую сессию после отключения"""
         # TODODODODO
+        # game.state inactive -> проверить все поля чтоб чистые были
         raise NotImplementedError

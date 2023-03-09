@@ -2,6 +2,7 @@ from sqlalchemy import func, select, update
 
 from app.base.base_accessor import BaseAccessor
 from app.game.models import ChatModel, GameModel, PlayerModel, VKUserModel
+from app.game.states import GameState
 
 
 class GameAccessor(BaseAccessor):
@@ -204,7 +205,7 @@ class GameAccessor(BaseAccessor):
                 )
                 result = await session.execute(q)
                 amount = result.scalar()
-                
+
         return amount
 
     async def add_game_played_to_player(self, player_id: int) -> None:
@@ -324,12 +325,9 @@ class GameAccessor(BaseAccessor):
 
         game = await self.get_game_by_vk_id(vk_id=vk_id)
 
-        # TODO cтейты вынести в енам! -> (game.state != State.INACTIVE)
-        result = game and game.state != "inactive"
+        return game and game.state != GameState.inactive.name
 
-        return result
-
-    async def set_game_state(self, game_id: int, new_state: str) -> None:
+    async def set_game_state(self, game_id: int, new_state: GameState) -> None:
         """меняет статус игры"""
 
         async with self.app.database.session() as session:
@@ -337,7 +335,7 @@ class GameAccessor(BaseAccessor):
                 q = (
                     update(GameModel)
                     .filter_by(id=game_id)
-                    .values(state=new_state)
+                    .values(state=new_state.name)
                 )
                 await session.execute(q)
 

@@ -1,6 +1,7 @@
 from sqlalchemy import JSON, Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
+from app.game.states import GameState
 from app.store.database.sqlalchemy_base import db
 
 
@@ -21,17 +22,16 @@ class ChatModel(db):
     )
 
     def __repr__(self):
-        return f"ChatModel(id={self.id!r}, vk_peer_id={self.vk_peer_id!r})"
+        return f"ChatModel(id={self.id!r}, vk_id={self.vk_id!r})"
 
 
-# TODO ограничить варианты state: inactive, define_players, betting, dealing, petting, ...
 # TODO загуглить, почему у меня связь отображается не как 1-1 и исправить
 class GameModel(db):
     __tablename__ = "game"
 
     id = Column(Integer, primary_key=True)
     chat_id = Column(ForeignKey("chat.id", ondelete="CASCADE"), nullable=False)
-    state = Column(String, default="inactive", nullable=False)
+    state = Column(String, default=GameState.inactive.name, nullable=False)
     current_player_id = Column(Integer, nullable=True)
     dealer_points = Column(Integer, nullable=True)
 
@@ -86,6 +86,3 @@ class VKUserModel(db):
 
     def __repr__(self):
         return f"VKUserModel(id={self.id!r}, name={self.name!r})"
-
-
-# TODO статистика, сколько всего денег выиграло казино

@@ -1,6 +1,7 @@
 import typing
 from logging import getLogger
 
+from app.game.states import GameState
 from app.store.game.decks import EndlessDeck
 from app.store.game.decorators import (
     game_must_be_off,
@@ -49,7 +50,7 @@ class GameHandler:
         await self.app.store.game_manager.start_game(update.peer_id)
 
     @game_must_be_on
-    @game_must_be_on_state("define_players")
+    @game_must_be_on_state(GameState.gathering)
     async def register_player(self, update: Update) -> None:
         """регистрирует пользователя в качестве игрока"""
 
@@ -97,7 +98,8 @@ class GameHandler:
     async def _is_all_play(
         self, vk_chat_id: int, game_id: int, losers: int
     ) -> bool:
-        """предикат, проверяющий, все ли участники чата, у которых остался cash, согласились играть"""
+        """предикат, проверяющий, все ли участники чата,
+        у которых остался cash, согласились играть"""
 
         chat_users = await self.app.store.vk_api.get_chat_users(vk_chat_id)
         if not chat_users:
@@ -110,10 +112,9 @@ class GameHandler:
         return len(active_players) == (len(chat_users) - losers)
 
     @game_must_be_on
-    @game_must_be_on_state("define_players", "betting")
+    @game_must_be_on_state(GameState.gathering, GameState.betting)
     async def unregister_player(self, update: Update) -> None:
         """отмечает игрока как неактивного"""
-        # TODO вынести cтейты в енам, да-да
 
         game = await self.app.store.game.get_game_by_vk_id(update.peer_id)
 
@@ -137,7 +138,7 @@ class GameHandler:
         await self.notifier.player_unregistered(update.peer_id, vk_user.name)
 
     @game_must_be_on
-    @game_must_be_on_state("betting")
+    @game_must_be_on_state(GameState.betting)
     async def accept_bet(self, update: Update) -> None:
         """проверяет и регистрирует ставку игрока"""
 
@@ -185,7 +186,7 @@ class GameHandler:
         await self.app.store.game_manager.start_dealing(update.peer_id, game.id)
 
     @game_must_be_on
-    @game_must_be_on_state("dealing")
+    @game_must_be_on_state(GameState.dealing)
     async def deal_more_card(self, update: Update) -> None:
         """останавливает таймер и выдает игроку еще одну карту"""
 
@@ -210,7 +211,7 @@ class GameHandler:
         )
 
     @game_must_be_on
-    @game_must_be_on_state("dealing")
+    @game_must_be_on_state(GameState.dealing)
     async def stop_dealing_cards(self, update: Update) -> None:
         """останавливает раздачу карт игроку, останавливает таймер и передает ход следующему"""
 
@@ -278,7 +279,7 @@ class GameHandler:
         await self.app.store.vk_api.send_message(msg)
 
     @game_must_be_on
-    @game_must_be_on_state("define_players", "betting")
+    @game_must_be_on_state(GameState.gathering, GameState.betting)
     async def abort_game(self, update: Update) -> None:
         """отменяет игру"""
 
@@ -290,7 +291,7 @@ class GameHandler:
         )
 
     @game_must_be_on
-    @game_must_be_on_state("dealing")
+    @game_must_be_on_state(GameState.dealing)
     async def cancel_game(self, update: Update) -> None:
         """досрочно останавливает игру"""
 
