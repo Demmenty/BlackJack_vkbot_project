@@ -1,4 +1,4 @@
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 
 from app.base.base_accessor import BaseAccessor
 from app.game.models import ChatModel, GameModel, PlayerModel, VKUserModel
@@ -191,6 +191,21 @@ class GameAccessor(BaseAccessor):
                 players = result.scalars().all()
 
         return players
+
+    async def count_losers(self, game_id: int) -> int:
+        """возвращает количество игроков с cash = 0"""
+
+        async with self.app.database.session() as session:
+            async with session.begin():
+                q = (
+                    select(func.count())
+                    .select_from(PlayerModel)
+                    .filter_by(cash=0, game_id=game_id)
+                )
+                result = await session.execute(q)
+                amount = result.scalar()
+                
+        return amount
 
     async def add_game_played_to_player(self, player_id: int) -> None:
         """добавляет еще одну игру в статистику игрока"""
