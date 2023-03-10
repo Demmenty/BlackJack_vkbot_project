@@ -37,7 +37,7 @@ def game_must_be_off(method):
     return wrapper
 
 
-def game_must_be_on_state(*states: tuple[GameState]):
+def game_must_be_on_state(*states: GameState):
     """если игра не на одной из переданных стадий - отменяет выполнение метода
     и посылает соответствующее уведомление"""
 
