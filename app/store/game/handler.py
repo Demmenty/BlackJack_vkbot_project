@@ -181,10 +181,12 @@ class GameHandler:
         if all(player.bet for player in active_players):
             await self.app.store.game_manager.timer.end_timer(game.id)
             await self.notifier.all_bets_placed(update.peer_id)
-            await self.app.store.game_manager.start_dealing(update.peer_id, game.id)
+            await self.app.store.game_manager.start_dealing(
+                update.peer_id, game.id
+            )
 
     @game_must_be_on
-    @game_must_be_on_state(GameState.dealing)
+    @game_must_be_on_state(GameState.dealing_players)
     async def deal_more_card(self, update: Update) -> None:
         """останавливает таймер и выдает игроку еще одну карту"""
 
@@ -209,7 +211,7 @@ class GameHandler:
         )
 
     @game_must_be_on
-    @game_must_be_on_state(GameState.dealing)
+    @game_must_be_on_state(GameState.dealing_players)
     async def stop_dealing_cards(self, update: Update) -> None:
         """останавливает раздачу карт игроку, останавливает таймер и передает ход следующему"""
 
@@ -289,7 +291,7 @@ class GameHandler:
         )
 
     @game_must_be_on
-    @game_must_be_on_state(GameState.dealing)
+    @game_must_be_on_state(GameState.dealing_players, GameState.dealing_dealer)
     async def cancel_game(self, update: Update) -> None:
         """досрочно останавливает игру"""
 

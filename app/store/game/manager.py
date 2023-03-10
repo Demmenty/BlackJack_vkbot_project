@@ -3,6 +3,7 @@ import typing
 from asyncio import create_task
 from logging import getLogger
 
+from app.game.models import GameModel
 from app.game.states import GameState
 from app.store.game.decks import EndlessDeck
 from app.store.game.notifications import GameNotifier
@@ -17,10 +18,11 @@ class GameManager:
 
     def __init__(self, app: "Application"):
         self.app = app
+        app.on_startup.append(self.connect)
         self.notifier = GameNotifier(app)
         self.deck = EndlessDeck()
-        self.logger = getLogger("game manager")
         self.timer = GameTimerManager()
+        self.logger = getLogger("game manager")
 
     async def start_game(self, vk_id: int) -> None:
         """запускает новую игру, направляет на стадию сбора игроков"""
@@ -53,7 +55,7 @@ class GameManager:
                 sec=30,
                 vk_id=vk_id,
                 game_id=game_id,
-                next_method=self.collect_players
+                next_method=self.collect_players,
             )
         )
 
@@ -87,10 +89,10 @@ class GameManager:
 
         create_task(
             self.timer.start_timer(
-                sec=60, 
+                sec=60,
                 vk_id=vk_id,
                 game_id=game_id,
-                next_method=self.collect_bets
+                next_method=self.collect_bets,
             )
         )
 
@@ -124,7 +126,11 @@ class GameManager:
 
         self.logger.info(f"start_dealing, vk_id={vk_id}, game_id={game_id}\n")
 
-        await self.app.store.game.set_game_state(game_id, GameState.dealing)
+        # сыгранной игрой будет считаться игра, дошедшая до раздачи
+        await self.app.store.game.add_game_played_to_chat(vk_id)
+        await self.app.store.game.set_game_state(
+            game_id, GameState.dealing_players
+        )
         await self.notifier.dealing_started(vk_id)
 
         players = await self.app.store.game.get_active_players(game_id)
@@ -144,7 +150,6 @@ class GameManager:
         await self.notifier.player_turn(vk_id, vk_user.name, vk_user.sex)
 
         await self.deal_cards_to_player(2, vk_id, game_id, player.id)
-        await self.app.store.game.add_game_played_to_chat(vk_id)
 
     async def deal_cards_to_player(
         self, amount: int, vk_id: int, game_id: int, player_id: int
@@ -239,6 +244,9 @@ class GameManager:
 
         self.logger.info(f"deal_to_dealer, vk_id={vk_id}, game_id={game_id}\n")
 
+        await self.app.store.game.set_game_state(
+            game_id, GameState.dealing_dealer
+        )
         await self.notifier.deal_to_dealer(vk_id)
 
         dealer_cards = [self.deck.take_a_card(), self.deck.take_a_card()]
@@ -248,6 +256,7 @@ class GameManager:
             dealer_cards.append(self.deck.take_a_card())
             dealer_points = self.deck.count_points(dealer_cards)
 
+        await self.app.store.game.set_dealer_hand(game_id, dealer_cards)
         await self.app.store.game.set_dealer_points(game_id, dealer_points)
         await self.notifier.cards_received(vk_id, dealer_cards)
 
@@ -345,6 +354,8 @@ class GameManager:
         self.logger.info(f"end_game, vk_id={vk_id}, game_id={game_id}\n")
 
         await self.app.store.game.set_game_state(game_id, GameState.inactive)
+        await self.app.store.game.clear_dealer_hand(game_id)
+        await self.app.store.game.set_dealer_points(game_id, None)
 
         await self.notifier.game_ended(vk_id)
         await self.notifier.game_offer(vk_id, again=True)
@@ -353,7 +364,7 @@ class GameManager:
         self, vk_id: int, game_id: int, causer: str | None = None
     ) -> None:
         """метод отменяет игру (при поиске игроков или ожидании ставок)"""
-        # TODO удалить этот метод, слишком похож на stop_game
+
         self.logger.info(
             f"abort_game, vk_id={vk_id}, game_id={game_id}, causer={causer}\n"
         )
@@ -395,6 +406,9 @@ class GameManager:
             if player.hand.get("cards"):
                 await self.app.store.game.clear_player_hand(player.id)
             await self.app.store.game.set_player_state(player.id, False)
+
+        await self.app.store.game.clear_dealer_hand(game_id)
+        await self.app.store.game.set_dealer_points(game_id, None)
 
         await self.notifier.game_canceled(vk_id, causer)
 

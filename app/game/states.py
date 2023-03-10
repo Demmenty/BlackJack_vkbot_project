@@ -7,5 +7,6 @@ class GameState(StrEnum):
     inactive = "inactive"
     gathering = "gathering"
     betting = "betting"
-    dealing = "dealing"
+    dealing_players = "dealing_players"
+    dealing_dealer = "dealing_dealer"
     results = "results"
