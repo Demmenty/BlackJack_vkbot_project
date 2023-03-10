@@ -78,6 +78,20 @@ class GameAccessor(BaseAccessor):
 
         return player
 
+    async def set_player_cash(
+        self, player_id: int, new_cash: int = 1000
+    ) -> None:
+        """меняет баланс игрока"""
+
+        async with self.app.database.session() as session:
+            async with session.begin():
+                q = (
+                    update(PlayerModel)
+                    .filter_by(id=player_id)
+                    .values(cash=new_cash)
+                )
+                await session.execute(q)
+
     async def set_player_bet(self, player_id: int, new_bet: int | None) -> None:
         """меняет ставку игрока"""
 
@@ -179,6 +193,17 @@ class GameAccessor(BaseAccessor):
                 player.cash = player.cash + player_bet
                 player.bet = None
                 await session.commit()
+
+    async def get_players(self, game_id: int) -> list[PlayerModel]:
+        """возвращает список всех игроков"""
+
+        async with self.app.database.session() as session:
+            async with session.begin():
+                q = select(PlayerModel).filter_by(game_id=game_id)
+                result = await session.execute(q)
+                players = result.scalars().all()
+
+        return players
 
     async def get_active_players(self, game_id: int) -> list[PlayerModel]:
         """возвращает список игроков с is_active=True"""
@@ -364,7 +389,7 @@ class GameAccessor(BaseAccessor):
         return games
 
     async def set_current_player(
-        self, player_id: int | None, game_id: int
+        self, game_id: int, player_id: int | None
     ) -> None:
         """отмечает в базе, что сейчас ход переданного игрока"""
 
@@ -377,7 +402,7 @@ class GameAccessor(BaseAccessor):
                 )
                 await session.execute(q)
 
-    async def set_dealer_points(self, game_id: int, points: int) -> None:
+    async def set_dealer_points(self, game_id: int, points: int | None) -> None:
         """записывает набранные дилером очки"""
 
         async with self.app.database.session() as session:
