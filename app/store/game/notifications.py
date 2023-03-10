@@ -136,6 +136,16 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
+    async def all_losers(self, peer_id: int) -> None:
+        """уведомляет чат, что не осталось игроков с cash"""
+
+        msg = BotMessage(
+            peer_id=peer_id,
+            text=GamePhrase.all_losers(),
+            keyboard=Keyboard(buttons=[[GameButton.casino]]).json,
+        )
+        await self.app.store.vk_api.send_message(msg)
+
     async def no_players(self, peer_id: int) -> None:
         """уведомляет чат о том, что никто не согласился играть"""
 
@@ -303,7 +313,8 @@ class GameNotifier:
         await self.app.store.vk_api.send_message(msg)
 
     async def offer_a_card(self, peer_id: int, username: str) -> None:
-        """выдает кнопки для запроса еще одной карты или отказа"""
+        """уведомляет игрока об ожидании его хода и
+        выдает кнопки для запроса еще одной карты или отказа"""
 
         msg = BotMessage(
             peer_id=peer_id,

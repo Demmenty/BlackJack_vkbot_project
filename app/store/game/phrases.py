@@ -9,7 +9,7 @@ class GamePhrase:
             return f"Тень настойчиво предлагает продолжить. %0A"
         else:
             return (
-                f"Мрачное существо предлагает сыграть партию в Блек Джек. %0A"
+                f"Мрачная сущность предлагает сыграть партию в Блек Джек. %0A"
             )
 
     def game_is_on() -> str:
@@ -62,6 +62,9 @@ class GamePhrase:
             return "Никто не остался в стороне, и игра начинается!"
         else:
             return "Все играют, отлично! %0A Из тех, у кого остались монеты, хихикающе добавляет тень."
+
+    def all_losers() -> str:
+        return "Зловеще смеясь, тень заявляет, что больше с вашей команды взять нечего и прогоняет из таверны."
 
     def no_players() -> str:
         return "Тень печально обводит взором пустой стол. Вам её даже жалко."
@@ -125,7 +128,9 @@ class GamePhrase:
         return f"{name} осознает, что монет для желаемой ставки недостаточно и размышляет над другой суммой."
 
     def bet_accepted(name: str, bet: int) -> str:
-        if bet < 51:
+        if bet == 1:
+            phrase = f"{name} с невозмутимым видом кидает единственную монету и получает осуждающие взгляды."
+        elif bet < 51:
             bet_string = (
                 str(bet)
                 + " "
@@ -222,7 +227,7 @@ class GamePhrase:
         return phrase
 
     def offer_a_card(name: str) -> str:
-        return f"Тень выжидательно уставилась."
+        return f"Тень выжидательно уставилась. %0AКакой выбор сделает {name} ?"
 
     def no_player_card_move(name: str, sex: str) -> str:
         if sex == "female":

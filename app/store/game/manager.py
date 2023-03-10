@@ -36,6 +36,12 @@ class GameManager:
         else:
             game = await self.app.store.game.get_game_by_chat_id(chat.id)
 
+        num_of_losers = await self.app.store.game.count_losers(game.id)
+        chat_users = await self.app.store.vk_api.get_chat_users(vk_id)
+        if chat_users and len(chat_users) == num_of_losers:
+            await self.notifier.all_losers(vk_id)
+            return
+
         await self.notifier.game_starting(vk_id)
 
         await self.gathering_players(vk_id, game.id)
