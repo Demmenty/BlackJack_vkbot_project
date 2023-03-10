@@ -325,7 +325,7 @@ class GameAccessor(BaseAccessor):
 
         game = await self.get_game_by_vk_id(vk_id=vk_id)
 
-        return game and game.state != GameState.inactive.name
+        return game and game.state != GameState.inactive
 
     async def set_game_state(self, game_id: int, new_state: GameState) -> None:
         """меняет статус игры"""

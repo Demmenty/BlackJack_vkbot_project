@@ -45,7 +45,7 @@ def game_must_be_on_state(*states: tuple[GameState]):
         async def wrapper(self: "GameManager", update: Update, *args, **kwargs):
             game = await self.app.store.game.get_game_by_vk_id(update.peer_id)
 
-            if game.state not in [state.name for state in states]:
+            if game.state not in states:
                 await self.notifier.wrong_state(peer_id=update.peer_id)
                 return
 

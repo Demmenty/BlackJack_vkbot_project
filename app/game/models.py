@@ -31,7 +31,7 @@ class GameModel(db):
 
     id = Column(Integer, primary_key=True)
     chat_id = Column(ForeignKey("chat.id", ondelete="CASCADE"), nullable=False)
-    state = Column(String, default=GameState.inactive.name, nullable=False)
+    state = Column(String, default=GameState.inactive, nullable=False)
     current_player_id = Column(Integer, nullable=True)
     dealer_points = Column(Integer, nullable=True)
 

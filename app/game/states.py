@@ -1,11 +1,11 @@
-import enum
+from enum import StrEnum
 
 
-class GameState(enum.Enum):
+class GameState(StrEnum):
     """стадии игры в Black Jack"""
 
     inactive = "inactive"
-    gathering = "gathering_players"
+    gathering = "gathering"
     betting = "betting"
     dealing = "dealing"
-    results = "sum_up_results"
+    results = "results"
