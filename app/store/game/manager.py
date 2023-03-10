@@ -24,27 +24,14 @@ class GameManager:
         self.timer = GameTimerManager()
         self.logger = getLogger("game manager")
 
-    async def start_game(self, vk_id: int) -> None:
+    async def start_game(self, vk_id: int, game_id: int) -> None:
         """запускает новую игру, направляет на стадию сбора игроков"""
 
-        self.logger.info(f"start_game, vk_id={vk_id}\n")
-
-        chat = await self.app.store.game.get_chat_by_vk_id(vk_id)
-        if not chat:
-            chat = await self.app.store.game.create_chat(vk_id)
-            game = await self.app.store.game.create_game(chat.id)
-        else:
-            game = await self.app.store.game.get_game_by_chat_id(chat.id)
-
-        num_of_losers = await self.app.store.game.count_losers(game.id)
-        chat_users = await self.app.store.vk_api.get_chat_users(vk_id)
-        if chat_users and len(chat_users) == num_of_losers:
-            await self.notifier.all_losers(vk_id)
-            return
+        self.logger.info(f"start_game, vk_id={vk_id}, game_id={game_id}\n")
 
         await self.notifier.game_starting(vk_id)
 
-        await self.gathering_players(vk_id, game.id)
+        await self.gathering_players(vk_id, game_id)
 
     async def gathering_players(self, vk_id: int, game_id: int) -> None:
         """запускает стадию набора игроков"""

@@ -38,14 +38,23 @@ class GameHandler:
     @game_must_be_off
     async def start_game(self, update: Update) -> None:
         """обработка запроса на старт игры"""
-        # TODO проверка наличия last_game
-        # TODO нет last_game > вариант "другим составом"
-        # TODO если last_game > предложить 3 варианта
 
-        # TODO варианты:
-        # "тем же составом" > define направляет в betting без waiting
-        # "другим составом" > все игроки inactive > стадия define
-        # "совсем заново" > все игроки inactive и cash изначальный > стадия define
+        chat = await self.app.store.game.get_chat_by_vk_id(update.peer_id)
+
+        if not chat:
+            chat = await self.app.store.game.create_chat(update.peer_id)
+            game = await self.app.store.game.create_game(chat.id)
+        else:
+            game = await self.app.store.game.get_game_by_chat_id(chat.id)
+
+        chat_users = await self.app.store.vk_api.get_chat_users(update.peer_id)
+        # поменяла тут потому, что chat_users может быть None, если бот не админ
+        # и тогда считать лузеров нет смысла
+        if chat_users:
+            num_of_losers = await self.app.store.game.count_losers(game.id)
+            if len(chat_users) == num_of_losers:
+                await self.notifier.all_losers(update.peer_id)
+                return
 
         await self.app.store.game_manager.start_game(update.peer_id)
 
