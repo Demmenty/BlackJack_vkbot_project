@@ -451,8 +451,81 @@ class GameManager:
             player.cash,
         )
 
-    async def recover(self) -> None:
-        """восстанавливает игровую сессию после отключения"""
-        # TODODODODO
-        # game.state inactive -> проверить все поля чтоб чистые были
-        raise NotImplementedError
+    async def connect(self, app: "Application") -> None:
+        """проверка при запуске на наличие активных игр. если такие есть,
+        уведомляет чат о возвращении и отправляет игру в восстановительную функцию
+        """
+
+        active_games = await self.app.store.game.get_active_games()
+
+        for game in active_games:
+            chat = await self.app.store.game.get_chat_by_game_id(game.id)
+            await self.notifier.bot_returning(chat.vk_id)
+
+            await self.recovery(chat.vk_id, game)
+
+    async def recovery(self, vk_chat_id: int, game: GameModel) -> None:
+        """восстанавливает активную игру после отключения сервера"""
+
+        if game.state == GameState.gathering:
+            await self.gathering_players(vk_chat_id, game.id)
+            return
+
+        if game.state == GameState.betting:
+            await self.start_betting(vk_chat_id, game.id)
+            return
+
+        if game.state == GameState.dealing_players:
+            if not game.current_player_id:
+                await self.start_dealing(vk_chat_id, game.id)
+                return
+
+            current_player = await self.app.store.game.get_player_by_id(
+                game.current_player_id
+            )
+
+            if current_player.hand:
+                await self.check_player_hand(
+                    vk_chat_id, game.id, current_player.id
+                )
+            else:
+                vk_user = await self.app.store.game.get_vk_user_by_player(
+                    current_player.id
+                )
+                await self.notifier.player_turn(
+                    vk_chat_id, vk_user.name, vk_user.sex
+                )
+                await self.deal_cards_to_player(
+                    2, vk_chat_id, game.id, current_player.id
+                )
+
+            return
+
+        if game.state == GameState.dealing_dealer:
+            if game.dealer_hand:
+                await self.notifier.deal_to_dealer(vk_chat_id)
+
+                if not game.dealer_points:
+                    dealer_points = self.deck.count_points(
+                        game.dealer_hand["cards"]
+                    )
+                    await self.app.store.game.set_dealer_points(
+                        game.id, dealer_points
+                    )
+
+                await self.notifier.cards_received(
+                    vk_chat_id, game.dealer_hand["cards"]
+                )
+                await self.sum_up_results(vk_chat_id, game.id)
+
+            else:
+                await self.deal_to_dealer(vk_chat_id, game.id)
+            return
+
+        if game.state == GameState.results:
+            await self.sum_up_results(vk_chat_id, game.id)
+            return
+
+
+# TODO разобраться в ошибке aiohttp.client_exceptions.ClientOSError: [Errno 1],
+# возникающей при прекращении работы

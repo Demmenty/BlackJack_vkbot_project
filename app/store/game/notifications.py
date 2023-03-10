@@ -487,3 +487,9 @@ class GameNotifier:
             ),
         )
         await self.app.store.vk_api.send_message(msg)
+
+    async def bot_returning(self, peer_id: int) -> None:
+        """уведомляет чат о возвращении бота после отключки"""
+
+        msg = BotMessage(peer_id=peer_id, text=GamePhrase.bot_returning())
+        await self.app.store.vk_api.send_message(msg)
