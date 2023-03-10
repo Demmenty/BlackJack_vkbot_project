@@ -399,3 +399,29 @@ class GameAccessor(BaseAccessor):
                 dealer_points = result.scalars().first()
 
         return dealer_points
+
+    async def set_dealer_hand(self, game_id: int, cards: list[str]) -> None:
+        """записывает набранные дилером карты"""
+
+        new_hand = {"cards": cards}
+
+        async with self.app.database.session() as session:
+            async with session.begin():
+                q = (
+                    update(GameModel)
+                    .filter_by(id=game_id)
+                    .values(dealer_hand=new_hand)
+                )
+                await session.execute(q)
+
+    async def clear_dealer_hand(self, game_id: int) -> None:
+        """опустошает руку дилера от карт"""
+
+        async with self.app.database.session() as session:
+            async with session.begin():
+                q = (
+                    update(GameModel)
+                    .filter_by(id=game_id)
+                    .values(dealer_hand={"cards": []})
+                )
+                await session.execute(q)
