@@ -339,6 +339,19 @@ class GameAccessor(BaseAccessor):
                 )
                 await session.execute(q)
 
+    async def get_active_games(self) -> list[GameModel]:
+        """возвращает список активных игр"""
+
+        async with self.app.database.session() as session:
+            async with session.begin():
+                q = select(GameModel).filter(
+                    GameModel.state != GameState.inactive
+                )
+                result = await session.execute(q)
+                games = result.scalars().all()
+
+        return games
+
     async def set_current_player(
         self, player_id: int | None, game_id: int
     ) -> None:
