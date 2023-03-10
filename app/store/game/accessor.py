@@ -264,6 +264,17 @@ class GameAccessor(BaseAccessor):
 
         return chat
 
+    async def get_chat_by_game_id(self, game_id: int) -> ChatModel:
+        """возвращает модель чата"""
+
+        async with self.app.database.session() as session:
+            async with session.begin():
+                q = select(ChatModel).filter(ChatModel.game.any(id=game_id))
+                result = await session.execute(q)
+                chat = result.scalars().first()
+
+        return chat
+
     async def add_game_played_to_chat(self, vk_id: int) -> None:
         """добавляет еще одну игру в статистику чата"""
 
