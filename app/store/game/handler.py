@@ -100,7 +100,7 @@ class GameHandler:
     ) -> bool:
         """предикат, проверяющий, все ли участники чата,
         у которых остался cash, согласились играть"""
-
+        # TODO учитывать нажавших "пас"
         chat_users = await self.app.store.vk_api.get_chat_users(vk_chat_id)
         if not chat_users:
             return False
@@ -160,7 +160,7 @@ class GameHandler:
             return
 
         # TODO вынести команды куда-то
-        if update.text == "ва-банк!":
+        if update.text == "ва-банк":
             bet = player.cash
         else:
             bet = int(update.text)
@@ -177,13 +177,11 @@ class GameHandler:
         await self.notifier.bet_accepted(update.peer_id, vk_user.name, bet)
 
         active_players = await self.app.store.game.get_active_players(game.id)
-        for player in active_players:
-            if not player.bet:
-                return
 
-        await self.app.store.game_manager.timer.end_timer(game.id)
-        await self.notifier.all_bets_placed(update.peer_id)
-        await self.app.store.game_manager.start_dealing(update.peer_id, game.id)
+        if all(player.bet for player in active_players):
+            await self.app.store.game_manager.timer.end_timer(game.id)
+            await self.notifier.all_bets_placed(update.peer_id)
+            await self.app.store.game_manager.start_dealing(update.peer_id, game.id)
 
     @game_must_be_on
     @game_must_be_on_state(GameState.dealing)
