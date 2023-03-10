@@ -48,15 +48,14 @@ class GameHandler:
             game = await self.app.store.game.get_game_by_chat_id(chat.id)
 
         chat_users = await self.app.store.vk_api.get_chat_users(update.peer_id)
-        # поменяла тут потому, что chat_users может быть None, если бот не админ
-        # и тогда считать лузеров нет смысла
+
         if chat_users:
             num_of_losers = await self.app.store.game.count_losers(game.id)
             if len(chat_users) == num_of_losers:
                 await self.notifier.all_losers(update.peer_id)
                 return
 
-        await self.app.store.game_manager.start_game(update.peer_id)
+        await self.app.store.game_manager.start_game(update.peer_id, game.id)
 
     @game_must_be_on
     @game_must_be_on_state(GameState.gathering)
@@ -317,3 +316,35 @@ class GameHandler:
         await self.app.store.game_manager.send_statistic(
             update.peer_id, update.from_id
         )
+
+    async def send_restore_command(self, update: Update) -> None:
+        """отправляет команду для восстановления cash у всех игроков.
+        но только если есть хотя бы один проигравшийся."""
+
+        game = await self.app.store.game.get_game_by_vk_id(update.peer_id)
+        losers = await self.app.store.game.count_losers(game.id)
+
+        if losers:
+            vk_user = await self.app.store.vk_api.get_user(update.from_id)
+            await self.notifier.restore_command(
+                update.peer_id, vk_user.name, vk_user.sex
+            )
+
+    async def restore_game_and_cash(self, update: Update) -> None:
+        """инактивирует игру и делает cash игроков стартовым.
+        но только если есть хотя бы один проигравшийся."""
+
+        game = await self.app.store.game.get_game_by_vk_id(update.peer_id)
+        losers = await self.app.store.game.count_losers(game.id)
+
+        if not losers:
+            return
+
+        await self.app.store.game_manager.inactivate_game(game.id)
+
+        players = await self.app.store.game.get_players(game.id)
+        for player in players:
+            await self.app.store.game.set_player_cash(player.id, new_cash=1000)
+
+        await self.notifier.cash_restored(update.peer_id)
+        await self.notifier.game_offer(update.peer_id)

@@ -493,3 +493,23 @@ class GameNotifier:
 
         msg = BotMessage(peer_id=peer_id, text=GamePhrase.bot_returning())
         await self.app.store.vk_api.send_message(msg)
+
+    async def restore_command(
+        self, peer_id: int, username: str, sex: str
+    ) -> None:
+        """уведомляет о команде для восстановления cash всех игроков"""
+
+        msg = BotMessage(
+            peer_id=peer_id,
+            text=GamePhrase.get_restore_command(username, sex),
+        )
+        await self.app.store.vk_api.send_message(msg)
+
+    async def cash_restored(self, peer_id: int) -> None:
+        """уведомляет чат о том, что cash и игра вернулись к стартовому состоянию"""
+
+        msg = BotMessage(
+            peer_id=peer_id,
+            text=GamePhrase.cash_restored(),
+        )
+        await self.app.store.vk_api.send_message(msg)

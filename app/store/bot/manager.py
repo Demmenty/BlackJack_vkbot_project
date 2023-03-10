@@ -75,11 +75,13 @@ class BotManager:
             "играю": self.app.store.game_handler.register_player,
             "пас": self.app.store.game_handler.unregister_player,
             "кошель": self.app.store.game_handler.send_player_cash,
-            "ва-банк!": self.app.store.game_handler.accept_bet,
+            "ва-банк": self.app.store.game_handler.accept_bet,
             "карту": self.app.store.game_handler.deal_more_card,
             "довольно": self.app.store.game_handler.stop_dealing_cards,
             "рука": self.app.store.game_handler.send_player_hand,
             "статистика": self.app.store.game_handler.send_statistic,
+            "ебаный рот этого казино": self.app.store.game_handler.send_restore_command,
+            "converta tempus": self.app.store.game_handler.restore_game_and_cash,
             "": self.app.store.game_handler.send_game_offer,
         }
 
@@ -93,7 +95,9 @@ class BotManager:
         очищенным от обращения, пробелов и в нижнем регистре"""
 
         cleaned_text = (
-            text.replace("[club218753438|@shadow_dementia]", "").strip(" ,.!").lower()
+            text.replace("[club218753438|@shadow_dementia]", "")
+            .strip(" ,.!")
+            .lower()
         )
 
         return cleaned_text
