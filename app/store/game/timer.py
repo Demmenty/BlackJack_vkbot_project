@@ -1,5 +1,6 @@
 from asyncio import create_task, sleep as asleep
-from typing import Coroutine
+from logging import getLogger
+from typing import Any, Awaitable, Callable
 
 from app.store.game.dataclasses import GameWaitTask
 
@@ -8,11 +9,15 @@ class GameTimerManager:
     """управление таймерами игры"""
 
     def __init__(self):
-        # здесь можно лучше typehint сделать?..
         self.tasks: dict = {}
+        self.logger = getLogger("game timer manager")
 
     async def start_timer(
-        self, sec: int, vk_id: int, game_id: int, next_method: Coroutine
+        self,
+        sec: int,
+        vk_id: int,
+        game_id: int,
+        next_method: Callable[[int, int], Awaitable[Any]],
     ) -> None:
         """запускает фоновое ожидание и регистрирует его.
         если таймер вышел, а ожидание не cancel - запускает next_method и удаляет запись.
@@ -34,7 +39,7 @@ class GameTimerManager:
                 await next_method(vk_id, game_id)
 
         except Exception as error:
-            print("!!! start_timer error !!!", error)
+            self.logger.info("!!! start_timer error !!!", error)
 
     async def end_timer(self, game_id: int) -> None:
         """останавливает активное фоновое ожидание в игре.
@@ -51,4 +56,4 @@ class GameTimerManager:
                     self.tasks[game_id].remove(task)
 
         except Exception as error:
-            print("!!! end_timer error !!!", error)
+            self.logger.info("!!! end_timer error !!!", error)
