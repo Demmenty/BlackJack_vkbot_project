@@ -33,6 +33,7 @@ class GameModel(db):
     chat_id = Column(ForeignKey("chat.id", ondelete="CASCADE"), nullable=False)
     state = Column(String, default=GameState.inactive, nullable=False)
     current_player_id = Column(Integer, nullable=True)
+    dealer_hand: dict = Column(JSON, default={"cards": []}, nullable=False)
     dealer_points = Column(Integer, nullable=True)
 
     chat = relationship(
