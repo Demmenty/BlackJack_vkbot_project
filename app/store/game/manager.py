@@ -137,7 +137,7 @@ class GameManager:
         # TODO транзакции
         player = random.choice(players)
 
-        await self.app.store.game.set_current_player(player.id, game_id)
+        await self.app.store.game.set_current_player(game_id, player.id)
 
         vk_user = await self.app.store.game.get_vk_user_by_player(player.id)
         await self.notifier.player_turn(vk_id, vk_user.name, vk_user.sex)
@@ -225,7 +225,7 @@ class GameManager:
 
         player = random.choice(players_without_cards)
 
-        await self.app.store.game.set_current_player(player.id, game_id)
+        await self.app.store.game.set_current_player(game_id, player.id)
 
         vk_user = await self.app.store.game.get_vk_user_by_player(player.id)
         await self.notifier.player_turn(vk_id, vk_user.name, vk_user.sex)
@@ -392,7 +392,7 @@ class GameManager:
         await self.timer.end_timer(game.id)
         players = await self.app.store.game.get_active_players(game_id)
 
-        await self.app.store.game.set_current_player(None, game.id)
+        await self.app.store.game.set_current_player(game.id, None)
 
         for player in players:
             await self.app.store.game.set_player_bet(player.id, None)
@@ -513,6 +513,31 @@ class GameManager:
             await self.sum_up_results(vk_chat_id, game.id)
             return
 
+    async def inactivate_game(self, game_id: int) -> None:
+        """делает игру неактивной и очищает соответствующие поля в базе"""
+
+        await self.timer.end_timer(game_id)
+
+        game = await self.app.store.game.get_game_by_id(game_id)
+
+        await self.app.store.game.set_game_state(game.id, GameState.inactive)
+
+        if game.current_player_id:
+            await self.app.store.game.set_current_player(game.id, None)
+        if game.dealer_hand["cards"]:
+            await self.app.store.game.clear_dealer_hand(game.id)
+        if game.dealer_points:
+            await self.app.store.game.set_dealer_points(game.id, None)
+
+        active_players = await self.app.store.game.get_active_players(game.id)
+
+        for player in active_players:
+            await self.app.store.game.set_player_state(player.id, False)
+            if player.bet:
+                await self.app.store.game.set_player_bet(player.id, None)
+            if player.hand["cards"]:
+                await self.app.store.game.clear_player_hand(player.id)
+
 
 # TODO разобраться в ошибке aiohttp.client_exceptions.ClientOSError: [Errno 1],
-# возникающей при прекращении работы
+# возникающей при прекращении работы, и тогда сделать disconnect
