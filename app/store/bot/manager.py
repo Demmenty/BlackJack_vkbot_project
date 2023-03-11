@@ -36,11 +36,7 @@ class BotManager:
     async def handle_private_msg(self, update: Update) -> None:
         """обработка сообщения в личке"""
 
-        msg = BotMessage(
-            peer_id=update.peer_id,
-            text=BotPhrase.personal_msg(),
-        )
-        await self.app.store.vk_api.send_message(msg)
+        await self.notifier.no_personal_chating(update.peer_id)
 
     async def handle_chat_invite(self, update: Update) -> None:
         """обработка приглашения в беседу"""
@@ -48,7 +44,9 @@ class BotManager:
         game_on = await self.app.store.game.is_game_on(update.peer_id)
 
         if game_on:
-            await self.app.store.game_manager.notifier.bot_returning(update.peer_id)
+            await self.app.store.game_manager.notifier.bot_returning(
+                update.peer_id
+            )
             game = await self.app.store.game.get_game_by_vk_id(update.peer_id)
             await self.app.store.game_manager.recovery(update.peer_id, game)
             return

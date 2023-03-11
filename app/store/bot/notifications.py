@@ -21,3 +21,12 @@ class BotNotifier:
             text=BotPhrase.meeting(again),
         )
         await self.app.store.vk_api.send_message(msg)
+
+    async def no_personal_chating(self, peer_id: int) -> None:
+        """уведомляет о том, что бот работает только в чатах"""
+
+        msg = BotMessage(
+            peer_id=peer_id,
+            text=BotPhrase.no_personal_chating(),
+        )
+        await self.app.store.vk_api.send_message(msg)
