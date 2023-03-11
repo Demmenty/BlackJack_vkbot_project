@@ -1,6 +1,7 @@
 from asyncio import create_task, sleep as asleep
+from collections.abc import Awaitable, Callable
 from logging import getLogger
-from typing import Any, Awaitable, Callable
+from typing import Any
 
 from app.store.game.dataclasses import GameWaitTask
 
