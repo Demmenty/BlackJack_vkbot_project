@@ -108,12 +108,12 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
-    async def no_cash(self, peer_id: int, username: str) -> None:
+    async def no_cash_to_play(self, peer_id: int, username: str) -> None:
         """уведомляет игрока, что он не может играть без денег"""
 
         msg = BotMessage(
             peer_id=peer_id,
-            text=GamePhrase.no_cash(username),
+            text=GamePhrase.no_cash_to_play(username),
             keyboard=Keyboard(
                 buttons=[
                     [

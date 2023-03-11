@@ -81,7 +81,9 @@ class GameHandler:
             vk_user = await self.app.store.game.get_vk_user_by_player(player.id)
 
             if player.cash == 0:
-                await self.notifier.no_cash(update.peer_id, vk_user.name)
+                await self.notifier.no_cash_to_play(
+                    update.peer_id, vk_user.name
+                )
                 return
 
             if player.is_active:
