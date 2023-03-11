@@ -1,22 +1,22 @@
-from ..vk_api.dataclasses import Action, Button
+from app.store.game.events import GameEvent
+from app.store.vk_api.dataclasses import Action, Button
 
 
-# TODO все возможные команды вынести в ЕНАМ в одно место, см.worknote
 class GameButton:
-    start = Button(action=Action(label="начать"))
-    rules = Button(color="secondary", action=Action(label="правила"))
-    stop = Button(
-        color="negative", action=Action(label="прекратить это безумие")
+    start = Button(action=Action(label=GameEvent.start))
+    rules = Button(color="secondary", action=Action(label=GameEvent.rules))
+    register = Button(action=Action(label=GameEvent.register))
+    unregister = Button(
+        color="secondary", action=Action(label=GameEvent.unregister)
     )
-    register = Button(action=Action(label="играю"))
-    unregister = Button(color="secondary", action=Action(label="пас"))
-    abort = Button(color="negative", action=Action(label="отмена"))
-    show_cash = Button(color="secondary", action=Action(label="кошель"))
-    casino = Button(
-        color="negative", action=Action(label="ебаный рот этого казино")
+    all_in = Button(action=Action(label=GameEvent.bet))
+    show_cash = Button(color="secondary", action=Action(label=GameEvent.cash))
+    one_more_card = Button(action=Action(label=GameEvent.more_card))
+    enough_cards = Button(action=Action(label=GameEvent.enough_cards))
+    show_hand = Button(color="secondary", action=Action(label=GameEvent.hand))
+    resent = Button(color="negative", action=Action(label=GameEvent.resent))
+    abort = Button(color="negative", action=Action(label=GameEvent.abort))
+    stop = Button(color="negative", action=Action(label=GameEvent.stop))
+    statistic = Button(
+        color="secondary", action=Action(label=GameEvent.statistic)
     )
-    all_in = Button(action=Action(label="ва-банк"))
-    one_more_card = Button(action=Action(label="карту"))
-    enough_cards = Button(action=Action(label="довольно"))
-    show_hand = Button(color="secondary", action=Action(label="рука"))
-    statistic = Button(color="secondary", action=Action(label="статистика"))

@@ -121,7 +121,7 @@ class GameNotifier:
                         GameButton.unregister,
                         GameButton.abort,
                     ],
-                    [GameButton.casino],
+                    [GameButton.resent],
                 ]
             ).json,
         )
@@ -142,7 +142,7 @@ class GameNotifier:
         msg = BotMessage(
             peer_id=peer_id,
             text=GamePhrase.all_losers(),
-            keyboard=Keyboard(buttons=[[GameButton.casino]]).json,
+            keyboard=Keyboard(buttons=[[GameButton.resent]]).json,
         )
         await self.app.store.vk_api.send_message(msg)
 
