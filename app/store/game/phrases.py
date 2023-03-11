@@ -6,7 +6,7 @@ class GamePhrase:
 
     def game_offer(again: bool = False) -> str:
         if again:
-            return f"Тень настойчиво предлагает продолжить. %0A"
+            return f"Тень настойчиво предлагает продолжить игру. %0A"
         else:
             return (
                 f"Мрачная сущность предлагает сыграть партию в Блек Джек. %0A"

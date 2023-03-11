@@ -451,6 +451,8 @@ class GameManager:
 
             await self.recovery(chat.vk_id, game)
 
+    # TODO возможно будет лучше выглядеть с match-case
+
     async def recovery(self, vk_chat_id: int, game: GameModel) -> None:
         """восстанавливает активную игру после отключения сервера"""
 

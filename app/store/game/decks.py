@@ -2,7 +2,7 @@ import random
 
 
 class EndlessDeck:
-    """бесконечная колода 52 карт для BkackJack"""
+    """бесконечная колода 52 карт для BlackJack"""
 
     card_values = {
         "2": 2,
