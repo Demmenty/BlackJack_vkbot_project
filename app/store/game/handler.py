@@ -8,6 +8,7 @@ from app.store.game.decorators import (
     game_must_be_on,
     game_must_be_on_state,
 )
+from app.store.game.events import GameEvent
 from app.store.game.notifications import GameNotifier
 from app.store.game.phrases import GamePhrase
 from app.store.vk_api.dataclasses import BotMessage, Update
@@ -167,8 +168,7 @@ class GameHandler:
             )
             return
 
-        # TODO вынести команды куда-то
-        if update.text == "ва-банк":
+        if update.text == GameEvent.bet.value:
             bet = player.cash
         else:
             bet = int(update.text)
