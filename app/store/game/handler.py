@@ -223,7 +223,8 @@ class GameHandler:
     @game_must_be_on
     @game_must_be_on_state(GameState.dealing_players)
     async def stop_dealing_cards(self, update: Update) -> None:
-        """останавливает раздачу карт игроку, останавливает таймер и передает ход следующему"""
+        """останавливает раздачу карт игроку,
+        останавливает таймер и передает ход следующему"""
 
         game = await self.app.store.game.get_game_by_vk_id(update.peer_id)
         player = await self.app.store.game.get_player_by_vk_and_game(
@@ -293,11 +294,10 @@ class GameHandler:
         """отменяет игру"""
 
         game = await self.app.store.game.get_game_by_vk_id(update.peer_id)
+        await self.app.store.game_manager.inactivate_game(game.id)
 
         causer = await self.app.store.vk_api.get_user(update.from_id)
-        await self.app.store.game_manager.abort_game(
-            update.peer_id, game.id, causer.name
-        )
+        await self.notifier.game_aborted(update.peer_id, causer.name)
 
     @game_must_be_on
     @game_must_be_on_state(GameState.dealing_players, GameState.dealing_dealer)
@@ -305,11 +305,10 @@ class GameHandler:
         """досрочно останавливает игру"""
 
         game = await self.app.store.game.get_game_by_vk_id(update.peer_id)
+        await self.app.store.game_manager.inactivate_game(game.id)
 
         causer = await self.app.store.vk_api.get_user(update.from_id)
-        await self.app.store.game_manager.stop_game(
-            update.peer_id, game.id, causer.name
-        )
+        await self.notifier.game_canceled(update.peer_id, causer.name)
 
     async def send_statistic(self, update: Update) -> None:
         """обрабатывает запрос статистики"""
