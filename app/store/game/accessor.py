@@ -150,8 +150,9 @@ class GameAccessor(BaseAccessor):
                 )
                 await session.execute(q)
 
-    async def withdraw_bet_from_cash(self, vk_id: int, player_id: int) -> None:
-        """уменьшает баланс игрока на его ставку, убирает ставку"""
+    async def withdraw_bet_from_cash(self, vk_id: int, player_id: int) -> int:
+        """уменьшает баланс игрока на его ставку, убирает ставку,
+        возвращает сумму, оставшуюся на балансе игрока"""
 
         async with self.app.database.session() as session:
             async with session.begin():
@@ -163,11 +164,14 @@ class GameAccessor(BaseAccessor):
                 result = await session.execute(q)
                 chat: ChatModel = result.scalars().first()
 
-                chat.casino_cash += player.bet
-                player.cash = player.cash - player.bet
-                player.bet = None
+                if player.bet:
+                    chat.casino_cash += player.bet
+                    player.cash = player.cash - player.bet
+                    player.bet = None
 
-                await session.commit()
+                    await session.commit()
+
+        return player.cash
 
     async def add_bet_to_cash(
         self, vk_id: int, player_id: int, blackjack: bool = False

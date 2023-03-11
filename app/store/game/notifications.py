@@ -127,6 +127,17 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
+    async def last_cash_spent(
+        self, peer_id: int, username: str, sex: str
+    ) -> None:
+        """уведомляет игрока о том, что он потратил последний cash"""
+
+        msg = BotMessage(
+            peer_id=peer_id,
+            text=GamePhrase.last_cash_spent(username, sex),
+        )
+        await self.app.store.vk_api.send_message(msg)
+
     async def all_play(self, peer_id: int, losers: int) -> None:
         """уведомляет чат, что все согласились играть (кроме проигравшихся)"""
 

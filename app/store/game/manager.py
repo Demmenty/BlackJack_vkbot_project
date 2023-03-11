@@ -128,12 +128,6 @@ class GameManager:
 
         players = await self.app.store.game.get_active_players(game_id)
 
-        # TODO показывать игроков тут, если изменились
-        # players_names: list[str] = []
-        # for player in players:
-        #     vk_user = await self.app.store.game.get_vk_user_by_player(player.id)
-        #     players_names.append(vk_user.name)
-
         # TODO транзакции
         player = random.choice(players)
 
@@ -185,7 +179,6 @@ class GameManager:
         if player_points > 21:
             await self.notifier.player_overflow(vk_id)
             await self.set_player_loss(vk_id, player_id)
-            # TODO check cash
             await self.set_next_player_turn(vk_id, game_id)
             return
 
@@ -330,8 +323,10 @@ class GameManager:
         self.logger.info(
             f"set_player_loss, vk_id={vk_id}, player_id={player_id}\n"
         )
-
-        await self.app.store.game.withdraw_bet_from_cash(vk_id, player_id)
+        # TODO транзакции здесь и в подобных местах
+        remaining_cash = await self.app.store.game.withdraw_bet_from_cash(
+            vk_id, player_id
+        )
         await self.app.store.game.clear_player_hand(player_id)
         await self.app.store.game.set_player_state(player_id, False)
         await self.app.store.game.add_game_played_to_player(player_id)
@@ -339,7 +334,10 @@ class GameManager:
 
         vk_user = await self.app.store.game.get_vk_user_by_player(player_id)
         await self.notifier.player_loss(vk_id, vk_user.name)
-        # TODO + if cash стало 0 -> notifier.cash_spent
+        if not remaining_cash:
+            await self.notifier.last_cash_spent(
+                vk_id, vk_user.name, vk_user.sex
+            )
 
     async def end_game(self, vk_id: int, game_id: int) -> None:
         """заканчивает игру"""
