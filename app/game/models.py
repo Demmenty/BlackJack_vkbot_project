@@ -81,7 +81,6 @@ class VKUserModel(db):
     vk_id = Column(Integer, nullable=False)
     name = Column(String, nullable=False)
     sex = Column(String, nullable=False)
-    # TODO ограничить варианты sex, никакой пропаганды тут! >:(
 
     players = relationship("PlayerModel", back_populates="vk_user")
 

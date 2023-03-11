@@ -280,7 +280,6 @@ class GameHandler:
 
     async def send_game_rules(self, update: Update) -> None:
         """отправляет в чат описание правил игры"""
-        # TODO отправлять кнопки в зависимости от стадии игры
 
         vk_user = await self.app.store.vk_api.get_user(update.from_id)
         msg = BotMessage(

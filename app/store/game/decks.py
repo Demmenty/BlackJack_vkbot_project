@@ -63,5 +63,3 @@ class EndlessDeck:
         result = len(cards) == 2 and self.count_points(cards) == 21
 
         return result
-
-    # TODO метод возврата пути к картинке к нужной карте

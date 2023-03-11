@@ -101,7 +101,7 @@ class GameNotifier:
         self, peer_id: int, username: int
     ) -> None:
         """уведомляет чат, что игрок уже зарегистрирован (передать имя)"""
-        # TODO выслать кнопку "передумал" и реализовать такую функцию
+
         msg = BotMessage(
             peer_id=peer_id,
             text=GamePhrase.player_already_registered(username),
