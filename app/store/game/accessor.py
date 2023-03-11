@@ -1,7 +1,8 @@
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 
 from app.base.base_accessor import BaseAccessor
 from app.game.models import ChatModel, GameModel, PlayerModel, VKUserModel
+from app.game.states import GameState
 
 
 class GameAccessor(BaseAccessor):
@@ -76,6 +77,20 @@ class GameAccessor(BaseAccessor):
                 player = result.scalars().first()
 
         return player
+
+    async def set_player_cash(
+        self, player_id: int, new_cash: int = 1000
+    ) -> None:
+        """меняет баланс игрока"""
+
+        async with self.app.database.session() as session:
+            async with session.begin():
+                q = (
+                    update(PlayerModel)
+                    .filter_by(id=player_id)
+                    .values(cash=new_cash)
+                )
+                await session.execute(q)
 
     async def set_player_bet(self, player_id: int, new_bet: int | None) -> None:
         """меняет ставку игрока"""
@@ -179,6 +194,17 @@ class GameAccessor(BaseAccessor):
                 player.bet = None
                 await session.commit()
 
+    async def get_players(self, game_id: int) -> list[PlayerModel]:
+        """возвращает список всех игроков"""
+
+        async with self.app.database.session() as session:
+            async with session.begin():
+                q = select(PlayerModel).filter_by(game_id=game_id)
+                result = await session.execute(q)
+                players = result.scalars().all()
+
+        return players
+
     async def get_active_players(self, game_id: int) -> list[PlayerModel]:
         """возвращает список игроков с is_active=True"""
 
@@ -191,7 +217,22 @@ class GameAccessor(BaseAccessor):
                 players = result.scalars().all()
 
         return players
-    
+
+    async def count_losers(self, game_id: int) -> int:
+        """возвращает количество игроков с cash = 0"""
+
+        async with self.app.database.session() as session:
+            async with session.begin():
+                q = (
+                    select(func.count())
+                    .select_from(PlayerModel)
+                    .filter_by(cash=0, game_id=game_id)
+                )
+                result = await session.execute(q)
+                amount = result.scalar()
+
+        return amount
+
     async def add_game_played_to_player(self, player_id: int) -> None:
         """добавляет еще одну игру в статистику игрока"""
 
@@ -224,7 +265,7 @@ class GameAccessor(BaseAccessor):
                 player: PlayerModel = result.scalars().first()
                 player.games_lost += 1
                 await session.commit()
-    
+
     # chat
     async def create_chat(self, vk_id: int) -> ChatModel:
         """создает и возвращает модель чата, vk_id = peer_id из vk"""
@@ -243,6 +284,17 @@ class GameAccessor(BaseAccessor):
         async with self.app.database.session() as session:
             async with session.begin():
                 q = select(ChatModel).filter_by(vk_id=vk_id)
+                result = await session.execute(q)
+                chat = result.scalars().first()
+
+        return chat
+
+    async def get_chat_by_game_id(self, game_id: int) -> ChatModel:
+        """возвращает модель чата"""
+
+        async with self.app.database.session() as session:
+            async with session.begin():
+                q = select(ChatModel).filter(ChatModel.game.any(id=game_id))
                 result = await session.execute(q)
                 chat = result.scalars().first()
 
@@ -309,12 +361,9 @@ class GameAccessor(BaseAccessor):
 
         game = await self.get_game_by_vk_id(vk_id=vk_id)
 
-        # TODO cтейты вынести в енам! -> (game.state != State.INACTIVE)
-        result = game and game.state != "inactive"
+        return game and game.state != GameState.inactive
 
-        return result
-
-    async def set_game_state(self, game_id: int, new_state: str) -> None:
+    async def set_game_state(self, game_id: int, new_state: GameState) -> None:
         """меняет статус игры"""
 
         async with self.app.database.session() as session:
@@ -322,12 +371,25 @@ class GameAccessor(BaseAccessor):
                 q = (
                     update(GameModel)
                     .filter_by(id=game_id)
-                    .values(state=new_state)
+                    .values(state=new_state.name)
                 )
                 await session.execute(q)
 
+    async def get_active_games(self) -> list[GameModel]:
+        """возвращает список активных игр"""
+
+        async with self.app.database.session() as session:
+            async with session.begin():
+                q = select(GameModel).filter(
+                    GameModel.state != GameState.inactive
+                )
+                result = await session.execute(q)
+                games = result.scalars().all()
+
+        return games
+
     async def set_current_player(
-        self, player_id: int | None, game_id: int
+        self, game_id: int, player_id: int | None
     ) -> None:
         """отмечает в базе, что сейчас ход переданного игрока"""
 
@@ -340,7 +402,7 @@ class GameAccessor(BaseAccessor):
                 )
                 await session.execute(q)
 
-    async def set_dealer_points(self, game_id: int, points: int) -> None:
+    async def set_dealer_points(self, game_id: int, points: int | None) -> None:
         """записывает набранные дилером очки"""
 
         async with self.app.database.session() as session:
@@ -362,3 +424,29 @@ class GameAccessor(BaseAccessor):
                 dealer_points = result.scalars().first()
 
         return dealer_points
+
+    async def set_dealer_hand(self, game_id: int, cards: list[str]) -> None:
+        """записывает набранные дилером карты"""
+
+        new_hand = {"cards": cards}
+
+        async with self.app.database.session() as session:
+            async with session.begin():
+                q = (
+                    update(GameModel)
+                    .filter_by(id=game_id)
+                    .values(dealer_hand=new_hand)
+                )
+                await session.execute(q)
+
+    async def clear_dealer_hand(self, game_id: int) -> None:
+        """опустошает руку дилера от карт"""
+
+        async with self.app.database.session() as session:
+            async with session.begin():
+                q = (
+                    update(GameModel)
+                    .filter_by(id=game_id)
+                    .values(dealer_hand={"cards": []})
+                )
+                await session.execute(q)

@@ -1,5 +1,6 @@
 import typing
 
+from app.game.states import GameState
 from app.store.vk_api.dataclasses import Update
 
 if typing.TYPE_CHECKING:
@@ -36,7 +37,7 @@ def game_must_be_off(method):
     return wrapper
 
 
-def game_must_be_on_state(*states):
+def game_must_be_on_state(*states: GameState):
     """если игра не на одной из переданных стадий - отменяет выполнение метода
     и посылает соответствующее уведомление"""
 

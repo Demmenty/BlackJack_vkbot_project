@@ -5,7 +5,7 @@ from ..vk_api.dataclasses import Action, Button
 class GameButton:
     start = Button(action=Action(label="начать"))
     rules = Button(color="secondary", action=Action(label="правила"))
-    stop = Button(color="negative", action=Action(label="прекратить"))
+    stop = Button(color="negative", action=Action(label="прекратить это безумие"))
     register = Button(action=Action(label="играю"))
     unregister = Button(color="secondary", action=Action(label="пас"))
     abort = Button(color="negative", action=Action(label="отмена"))
