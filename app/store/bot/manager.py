@@ -48,7 +48,9 @@ class BotManager:
         game_on = await self.app.store.game.is_game_on(update.peer_id)
 
         if game_on:
-            # TODO self.app.store.game_manager.recover(update.peer_id)
+            await self.app.store.game_manager.notifier.bot_returning(update.peer_id)
+            game = await self.app.store.game.get_game_by_vk_id(update.peer_id)
+            await self.app.store.game_manager.recovery(update.peer_id, game)
             return
 
         game = await self.app.store.game.get_game_by_vk_id(update.peer_id)
