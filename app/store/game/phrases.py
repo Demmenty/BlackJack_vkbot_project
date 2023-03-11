@@ -362,6 +362,9 @@ class GamePhrase:
 
         return phrase
 
+    def bot_leaving() -> str:
+        return "Очертания тени внезапно начали растворяться в окружении, и вскоре она совсем исчезла..."
+
     def bot_returning() -> str:
         return (
             "Призрачный силует появляется из небытия:%0A"

@@ -19,6 +19,7 @@ class GameManager:
     def __init__(self, app: "Application"):
         self.app = app
         app.on_startup.append(self.connect)
+        app.on_shutdown.append(self.disconnect)
         self.notifier = GameNotifier(app)
         self.deck = EndlessDeck()
         self.timer = GameTimerManager()
@@ -491,6 +492,13 @@ class GameManager:
             if player.hand["cards"]:
                 await self.app.store.game.clear_player_hand(player.id)
 
+    async def disconnect(self, app: "Application") -> None:
+        """проверка при отключении на наличие активных игр.
+        если такие есть, уведомляет ее чат о своем отключении
+        """
 
-# TODO разобраться в ошибке aiohttp.client_exceptions.ClientOSError: [Errno 1],
-# возникающей при прекращении работы, и тогда сделать disconnect
+        active_games = await self.app.store.game.get_active_games()
+
+        for game in active_games:
+            chat = await self.app.store.game.get_chat_by_game_id(game.id)
+            await self.notifier.bot_leaving(chat.vk_id)
