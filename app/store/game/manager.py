@@ -376,6 +376,7 @@ class GameManager:
             await self.notifier.player_stat(
                 vk_chat_id, vk_user.name, vk_user.sex
             )
+            return
 
         vk_user = await self.app.store.game.get_vk_user_by_player(player.id)
         await self.notifier.player_stat(
