@@ -40,7 +40,7 @@ class GameTimerManager:
                 await next_method(vk_id, game_id)
 
         except Exception as error:
-            self.logger.info("!!! start_timer error !!!", error)
+            self.logger.info("start_timer error: ", error)
 
     async def end_timer(self, game_id: int) -> None:
         """останавливает активное фоновое ожидание в игре.
@@ -57,4 +57,4 @@ class GameTimerManager:
                     self.tasks[game_id].remove(task)
 
         except Exception as error:
-            self.logger.info("!!! end_timer error !!!", error)
+            self.logger.info("end_timer error: ", error)
