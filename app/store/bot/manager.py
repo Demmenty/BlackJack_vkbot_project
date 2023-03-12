@@ -2,9 +2,8 @@ import typing
 from logging import getLogger
 
 from app.store.bot.notifications import BotNotifier
-from app.store.bot.phrases import BotPhrase
 from app.store.game.router import GameEventRouter
-from app.store.vk_api.dataclasses import BotMessage, Update
+from app.store.vk_api.dataclasses import Update
 
 if typing.TYPE_CHECKING:
     from app.web.app import Application
@@ -48,6 +47,7 @@ class BotManager:
                 update.peer_id
             )
             game = await self.app.store.game.get_game_by_vk_id(update.peer_id)
+            await self.app.store.game_manager.timer.end_timer(game.id)
             await self.app.store.game_manager.recovery(update.peer_id, game)
             return
 
