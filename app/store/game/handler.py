@@ -154,12 +154,11 @@ class GameHandler:
         """проверяет и регистрирует ставку игрока"""
 
         game = await self.app.store.game.get_game_by_vk_id(update.peer_id)
-
         player = await self.app.store.game.get_player_by_vk_and_game(
             update.from_id, game.id
         )
 
-        if not player:
+        if not player or not player.is_active:
             return
 
         vk_user = await self.app.store.game.get_vk_user_by_player(player.id)
