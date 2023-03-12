@@ -6,7 +6,7 @@ class GamePhrase:
 
     def game_offer(again: bool = False) -> str:
         if again:
-            return f"Тень настойчиво предлагает продолжить. %0A"
+            return f"Тень настойчиво предлагает продолжить игру. %0A"
         else:
             return (
                 f"Мрачная сущность предлагает сыграть партию в Блек Джек. %0A"
@@ -52,7 +52,7 @@ class GamePhrase:
             "- карты с числом так и считаются%0A"
             "- валет, дама, король - как 10%0A"
             "- туз особенный: 11 если все набранные очки не больше 21, иначе 1%0A"
-            "Этих знаний вам будет достаточно."
+            "Этих знаний вам будет достаточно, - добавляет тень."
         )
 
         return rules
@@ -121,8 +121,21 @@ class GamePhrase:
             )
         return phrase
 
-    def no_cash(name: str) -> str:
+    def no_cash_to_play(name: str) -> str:
         return f"{name} хочет сесть за стол, но понимает, что больше ставить нечего."
+
+    def last_cash_spent(name: str, sex: str) -> str:
+        if sex == "female":
+            phrase = (
+                f"{name} потратила последние монеты, и вы обращаете внимание, "
+                + "что в глазницах тени вспыхнул фиолетовый свет."
+            )
+        else:
+            phrase = (
+                f"{name} удрученно осознает потерю последних золотых. "
+                + " Неприятное холодное дуновение прошлось по вашим ногам."
+            )
+        return phrase
 
     def to_much_bet(name: str) -> str:
         return f"{name} осознает, что монет для желаемой ставки недостаточно и размышляет над другой суммой."
@@ -348,6 +361,9 @@ class GamePhrase:
             phrase += f"У него в кошельке {cash_string}."
 
         return phrase
+
+    def bot_leaving() -> str:
+        return "Очертания тени внезапно начали растворяться в окружении, и вскоре она совсем исчезла..."
 
     def bot_returning() -> str:
         return (

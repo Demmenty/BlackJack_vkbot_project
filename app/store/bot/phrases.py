@@ -1,9 +1,6 @@
 class BotPhrase:
     """заготовленные общие фразы бота"""
 
-    def personal_msg() -> str:
-        return f"Призрак не обращает на вас внимания. Одинокие путники ему не интересны."
-
     def meeting(again: bool = False) -> str:
         if again:
             phrase = (
@@ -17,3 +14,6 @@ class BotPhrase:
                 "Зайдя внутрь, вы обнаруживаете казино, в котором не занят только карточный стол."
             )
         return phrase
+
+    def no_personal_chating() -> str:
+        return f"Призрак не обращает на вас внимания. Одинокие путники ему не интересны."

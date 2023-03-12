@@ -19,6 +19,7 @@ class GameManager:
     def __init__(self, app: "Application"):
         self.app = app
         app.on_startup.append(self.connect)
+        app.on_shutdown.append(self.disconnect)
         self.notifier = GameNotifier(app)
         self.deck = EndlessDeck()
         self.timer = GameTimerManager()
@@ -61,7 +62,8 @@ class GameManager:
 
         if not players:
             await self.notifier.no_players(vk_id)
-            await self.abort_game(vk_id, game_id)
+            await self.inactivate_game(game_id)
+            await self.notifier.game_aborted(vk_id)
             return
 
         players_names: list[str] = []
@@ -109,7 +111,8 @@ class GameManager:
 
         if not players:
             await self.notifier.no_players(vk_id)
-            await self.abort_game(vk_id, game_id)
+            await self.inactivate_game(game_id)
+            await self.notifier.game_aborted(vk_id)
             return
 
         await self.start_dealing(vk_id, game_id)
@@ -127,12 +130,6 @@ class GameManager:
         await self.notifier.dealing_started(vk_id)
 
         players = await self.app.store.game.get_active_players(game_id)
-
-        # TODO показывать игроков тут, если изменились
-        # players_names: list[str] = []
-        # for player in players:
-        #     vk_user = await self.app.store.game.get_vk_user_by_player(player.id)
-        #     players_names.append(vk_user.name)
 
         # TODO транзакции
         player = random.choice(players)
@@ -185,7 +182,6 @@ class GameManager:
         if player_points > 21:
             await self.notifier.player_overflow(vk_id)
             await self.set_player_loss(vk_id, player_id)
-            # TODO check cash
             await self.set_next_player_turn(vk_id, game_id)
             return
 
@@ -330,8 +326,10 @@ class GameManager:
         self.logger.info(
             f"set_player_loss, vk_id={vk_id}, player_id={player_id}\n"
         )
-
-        await self.app.store.game.withdraw_bet_from_cash(vk_id, player_id)
+        # TODO транзакции здесь и в подобных местах
+        remaining_cash = await self.app.store.game.withdraw_bet_from_cash(
+            vk_id, player_id
+        )
         await self.app.store.game.clear_player_hand(player_id)
         await self.app.store.game.set_player_state(player_id, False)
         await self.app.store.game.add_game_played_to_player(player_id)
@@ -339,7 +337,10 @@ class GameManager:
 
         vk_user = await self.app.store.game.get_vk_user_by_player(player_id)
         await self.notifier.player_loss(vk_id, vk_user.name)
-        # TODO + if cash стало 0 -> notifier.cash_spent
+        if not remaining_cash:
+            await self.notifier.last_cash_spent(
+                vk_id, vk_user.name, vk_user.sex
+            )
 
     async def end_game(self, vk_id: int, game_id: int) -> None:
         """заканчивает игру"""
@@ -347,63 +348,12 @@ class GameManager:
         self.logger.info(f"end_game, vk_id={vk_id}, game_id={game_id}\n")
 
         await self.app.store.game.set_game_state(game_id, GameState.inactive)
+        await self.app.store.game.set_current_player(game_id, None)
         await self.app.store.game.clear_dealer_hand(game_id)
         await self.app.store.game.set_dealer_points(game_id, None)
 
         await self.notifier.game_ended(vk_id)
         await self.notifier.game_offer(vk_id, again=True)
-
-    async def abort_game(
-        self, vk_id: int, game_id: int, causer: str | None = None
-    ) -> None:
-        """метод отменяет игру (при поиске игроков или ожидании ставок)"""
-
-        self.logger.info(
-            f"abort_game, vk_id={vk_id}, game_id={game_id}, causer={causer}\n"
-        )
-
-        await self.app.store.game.set_game_state(game_id, GameState.inactive)
-
-        game = await self.app.store.game.get_game_by_id(game_id)
-        await self.timer.end_timer(game.id)
-        players = await self.app.store.game.get_active_players(game_id)
-
-        for player in players:
-            if player.bet:
-                await self.app.store.game.set_player_bet(player.id, None)
-            if player.hand.get("cards"):
-                await self.app.store.game.clear_player_hand(player.id)
-            await self.app.store.game.set_player_state(player.id, False)
-
-        await self.notifier.game_aborted(vk_id, causer)
-
-    async def stop_game(
-        self, vk_id: int, game_id: int, causer: str | None = None
-    ) -> None:
-        """удивительно, но этот метод останавливает игру"""
-
-        self.logger.info(
-            f"stop_game, vk_id={vk_id}, game_id={game_id}, causer={causer}\n"
-        )
-
-        await self.app.store.game.set_game_state(game_id, GameState.inactive)
-
-        game = await self.app.store.game.get_game_by_id(game_id)
-        await self.timer.end_timer(game.id)
-        players = await self.app.store.game.get_active_players(game_id)
-
-        await self.app.store.game.set_current_player(game.id, None)
-
-        for player in players:
-            await self.app.store.game.set_player_bet(player.id, None)
-            if player.hand.get("cards"):
-                await self.app.store.game.clear_player_hand(player.id)
-            await self.app.store.game.set_player_state(player.id, False)
-
-        await self.app.store.game.clear_dealer_hand(game_id)
-        await self.app.store.game.set_dealer_points(game_id, None)
-
-        await self.notifier.game_canceled(vk_id, causer)
 
     async def send_statistic(self, vk_chat_id: int, vk_user_id: int) -> None:
         """отправляет в чат статистику"""
@@ -426,6 +376,7 @@ class GameManager:
             await self.notifier.player_stat(
                 vk_chat_id, vk_user.name, vk_user.sex
             )
+            return
 
         vk_user = await self.app.store.game.get_vk_user_by_player(player.id)
         await self.notifier.player_stat(
@@ -450,6 +401,8 @@ class GameManager:
             await self.notifier.bot_returning(chat.vk_id)
 
             await self.recovery(chat.vk_id, game)
+
+    # TODO возможно будет лучше выглядеть с match-case
 
     async def recovery(self, vk_chat_id: int, game: GameModel) -> None:
         """восстанавливает активную игру после отключения сервера"""
@@ -516,6 +469,8 @@ class GameManager:
     async def inactivate_game(self, game_id: int) -> None:
         """делает игру неактивной и очищает соответствующие поля в базе"""
 
+        self.logger.info(f"inactivate_game, game_id={game_id}\n")
+
         await self.timer.end_timer(game_id)
 
         game = await self.app.store.game.get_game_by_id(game_id)
@@ -538,6 +493,13 @@ class GameManager:
             if player.hand["cards"]:
                 await self.app.store.game.clear_player_hand(player.id)
 
+    async def disconnect(self, app: "Application") -> None:
+        """проверка при отключении на наличие активных игр.
+        если такие есть, уведомляет ее чат о своем отключении
+        """
 
-# TODO разобраться в ошибке aiohttp.client_exceptions.ClientOSError: [Errno 1],
-# возникающей при прекращении работы, и тогда сделать disconnect
+        active_games = await self.app.store.game.get_active_games()
+
+        for game in active_games:
+            chat = await self.app.store.game.get_chat_by_game_id(game.id)
+            await self.notifier.bot_leaving(chat.vk_id)

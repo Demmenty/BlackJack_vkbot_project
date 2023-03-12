@@ -8,6 +8,7 @@ from app.store.game.decorators import (
     game_must_be_on,
     game_must_be_on_state,
 )
+from app.store.game.events import GameEvent
 from app.store.game.notifications import GameNotifier
 from app.store.game.phrases import GamePhrase
 from app.store.vk_api.dataclasses import BotMessage, Update
@@ -80,7 +81,9 @@ class GameHandler:
             vk_user = await self.app.store.game.get_vk_user_by_player(player.id)
 
             if player.cash == 0:
-                await self.notifier.no_cash(update.peer_id, vk_user.name)
+                await self.notifier.no_cash_to_play(
+                    update.peer_id, vk_user.name
+                )
                 return
 
             if player.is_active:
@@ -151,12 +154,11 @@ class GameHandler:
         """проверяет и регистрирует ставку игрока"""
 
         game = await self.app.store.game.get_game_by_vk_id(update.peer_id)
-
         player = await self.app.store.game.get_player_by_vk_and_game(
             update.from_id, game.id
         )
 
-        if not player:
+        if not player or not player.is_active:
             return
 
         vk_user = await self.app.store.game.get_vk_user_by_player(player.id)
@@ -167,8 +169,7 @@ class GameHandler:
             )
             return
 
-        # TODO вынести команды куда-то
-        if update.text == "ва-банк":
+        if update.text == GameEvent.bet.value:
             bet = player.cash
         else:
             bet = int(update.text)
@@ -221,7 +222,8 @@ class GameHandler:
     @game_must_be_on
     @game_must_be_on_state(GameState.dealing_players)
     async def stop_dealing_cards(self, update: Update) -> None:
-        """останавливает раздачу карт игроку, останавливает таймер и передает ход следующему"""
+        """останавливает раздачу карт игроку,
+        останавливает таймер и передает ход следующему"""
 
         game = await self.app.store.game.get_game_by_vk_id(update.peer_id)
         player = await self.app.store.game.get_player_by_vk_and_game(
@@ -278,7 +280,6 @@ class GameHandler:
 
     async def send_game_rules(self, update: Update) -> None:
         """отправляет в чат описание правил игры"""
-        # TODO отправлять кнопки в зависимости от стадии игры
 
         vk_user = await self.app.store.vk_api.get_user(update.from_id)
         msg = BotMessage(
@@ -292,11 +293,10 @@ class GameHandler:
         """отменяет игру"""
 
         game = await self.app.store.game.get_game_by_vk_id(update.peer_id)
+        await self.app.store.game_manager.inactivate_game(game.id)
 
         causer = await self.app.store.vk_api.get_user(update.from_id)
-        await self.app.store.game_manager.abort_game(
-            update.peer_id, game.id, causer.name
-        )
+        await self.notifier.game_aborted(update.peer_id, causer.name)
 
     @game_must_be_on
     @game_must_be_on_state(GameState.dealing_players, GameState.dealing_dealer)
@@ -304,11 +304,10 @@ class GameHandler:
         """досрочно останавливает игру"""
 
         game = await self.app.store.game.get_game_by_vk_id(update.peer_id)
+        await self.app.store.game_manager.inactivate_game(game.id)
 
         causer = await self.app.store.vk_api.get_user(update.from_id)
-        await self.app.store.game_manager.stop_game(
-            update.peer_id, game.id, causer.name
-        )
+        await self.notifier.game_canceled(update.peer_id, causer.name)
 
     async def send_statistic(self, update: Update) -> None:
         """обрабатывает запрос статистики"""

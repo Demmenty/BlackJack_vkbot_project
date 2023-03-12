@@ -1,16 +1,16 @@
-"""create all empty tables
+"""create all tables
 
-Revision ID: 9b559eb86b5e
+Revision ID: 000ddb4603d9
 Revises: 
-Create Date: 2023-03-08 21:25:18.983403
+Create Date: 2023-03-12 14:28:19.467752
 
 """
+from alembic import op
 import sqlalchemy as sa
 
-from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = '9b559eb86b5e'
+revision = '000ddb4603d9'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -44,6 +44,7 @@ def upgrade() -> None:
     sa.Column('chat_id', sa.Integer(), nullable=False),
     sa.Column('state', sa.String(), nullable=False),
     sa.Column('current_player_id', sa.Integer(), nullable=True),
+    sa.Column('dealer_hand', sa.JSON(), nullable=False),
     sa.Column('dealer_points', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['chat_id'], ['chat.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
