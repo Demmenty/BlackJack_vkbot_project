@@ -1,5 +1,6 @@
 import typing
 
+from app.store.bot.decorators import bot_typing
 from app.store.bot.phrases import BotPhrase
 from app.store.vk_api.dataclasses import BotMessage
 
@@ -13,6 +14,7 @@ class BotNotifier:
     def __init__(self, app: "Application"):
         self.app = app
 
+    @bot_typing
     async def meeting(self, peer_id: int, again: bool = False) -> None:
         """приветствует чат, так сказать"""
 

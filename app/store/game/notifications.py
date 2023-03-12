@@ -1,20 +1,14 @@
-import typing
-
+from app.store.bot.decorators import bot_typing
+from app.store.bot.notifications import BotNotifier
+from app.store.game.buttons import GameButton
+from app.store.game.phrases import GamePhrase
 from app.store.vk_api.dataclasses import Action, BotMessage, Button, Keyboard
 
-from .buttons import GameButton
-from .phrases import GamePhrase
 
-if typing.TYPE_CHECKING:
-    from app.web.app import Application
-
-
-class GameNotifier:
+class GameNotifier(BotNotifier):
     """посылает уведомления в чат игры"""
 
-    def __init__(self, app: "Application"):
-        self.app = app
-
+    @bot_typing
     async def game_offer(self, peer_id: int, again: bool = False) -> None:
         """предлагает сыграть в Black Jack"""
 
@@ -63,6 +57,7 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
+    @bot_typing
     async def waiting_players(self, peer_id: int) -> None:
         """уведомляет чат о начале набора игроков"""
 
@@ -127,6 +122,7 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
+    @bot_typing
     async def last_cash_spent(
         self, peer_id: int, username: str, sex: str
     ) -> None:
@@ -138,6 +134,7 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
+    @bot_typing
     async def all_play(self, peer_id: int, losers: int) -> None:
         """уведомляет чат, что все согласились играть (кроме проигравшихся)"""
 
@@ -147,6 +144,7 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
+    @bot_typing
     async def all_losers(self, peer_id: int) -> None:
         """уведомляет чат, что не осталось игроков с cash"""
 
@@ -157,6 +155,7 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
+    @bot_typing
     async def no_players(self, peer_id: int) -> None:
         """уведомляет чат о том, что никто не согласился играть"""
 
@@ -166,6 +165,7 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
+    @bot_typing
     async def active_players(self, peer_id: int, names: list[str]) -> None:
         """уведомляет чат о том, кто будет играть сейчас"""
 
@@ -175,6 +175,7 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
+    @bot_typing
     async def waiting_bets(self, peer_id: int) -> None:
         """уведомляет чат о начале приема ставок"""
 
@@ -243,6 +244,7 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
+    @bot_typing
     async def all_bets_placed(self, peer_id: int) -> None:
         """уведомляет чат, что ставки сделаны, ставок больше нет"""
 
@@ -252,6 +254,7 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
+    @bot_typing
     async def game_aborted(self, peer_id: int, username: str = "") -> None:
         """уведомляет чат о том, что игра отменена (при наборе игроков)"""
 
@@ -264,6 +267,7 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
+    @bot_typing
     async def game_canceled(self, peer_id: int, username: str = "") -> None:
         """уведомляет чат о том, что игра остановлена (раньше времени)"""
 
@@ -288,6 +292,7 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
+    @bot_typing
     async def dealing_started(self, peer_id: int) -> None:
         """уведомляет чат о том, что началась раздача карт"""
 
@@ -297,6 +302,7 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
+    @bot_typing
     async def player_turn(self, peer_id: int, username: str, sex: str) -> None:
         """уведомляет игрока о том, что его очередь брать карты"""
 
@@ -314,6 +320,7 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
+    @bot_typing
     async def cards_received(self, peer_id: int, cards: list[str]) -> None:
         """уведомляет о выпавших картах(карте)"""
 
@@ -323,6 +330,7 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
+    @bot_typing
     async def offer_a_card(self, peer_id: int, username: str) -> None:
         """уведомляет игрока об ожидании его хода и
         выдает кнопки для запроса еще одной карты или отказа"""
@@ -367,8 +375,10 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
+    @bot_typing
     async def not_a_player(self, peer_id: int, username: str) -> None:
-        """уведомляет пользователя, что он даже не игрок, даже не гражданин и даже не паладин"""
+        """уведомляет пользователя, что он даже не игрок,
+        даже не гражданин и даже не паладин"""
 
         msg = BotMessage(
             peer_id=peer_id,
@@ -376,6 +386,7 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
+    @bot_typing
     async def not_a_player_cash(self, peer_id: int, username: str) -> None:
         """уведомляет пользователя, что он даже не игрок,
         даже не гражданин и даже не паладин, и даже не имеет монет"""
@@ -395,6 +406,7 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
+    @bot_typing
     async def player_blackjack(self, peer_id: int, username: str) -> None:
         """уведомляет игрока, что у него очко"""
 
@@ -404,6 +416,7 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
+    @bot_typing
     async def player_overflow(self, peer_id: int) -> None:
         """уведомляет игрока, что у него получилось > 21"""
 
@@ -413,6 +426,7 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
+    @bot_typing
     async def player_loss(self, peer_id: int, username: str) -> None:
         """уведомляет игрока, что он проиграл"""
 
@@ -422,6 +436,7 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
+    @bot_typing
     async def player_draw(self, peer_id: int, username: str) -> None:
         """уведомляет игрока, что ничья"""
 
@@ -431,6 +446,7 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
+    @bot_typing
     async def player_win(
         self, peer_id: int, username: str, blackjack: bool = False
     ) -> None:
@@ -442,6 +458,7 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
+    @bot_typing
     async def deal_to_dealer(self, peer_id: int) -> None:
         """уведомляет чат о начале раздачи карт дилеру"""
 
@@ -451,12 +468,14 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
+    @bot_typing
     async def game_ended(self, peer_id: int) -> None:
         """уведомляет чат о завершении игры"""
 
         msg = BotMessage(peer_id=peer_id, text=GamePhrase.game_ended())
         await self.app.store.vk_api.send_message(msg)
 
+    @bot_typing
     async def start_cash_given(
         self, peer_id: int, username: str, start_cash: int = 1000
     ) -> None:
@@ -468,6 +487,7 @@ class GameNotifier:
         )
         await self.app.store.vk_api.send_message(msg)
 
+    @bot_typing
     async def chat_stat(
         self, peer_id: int, games_played: int, casino_cash: int
     ) -> None:
@@ -505,12 +525,14 @@ class GameNotifier:
         msg = BotMessage(peer_id=peer_id, text=GamePhrase.bot_leaving())
         await self.app.store.vk_api.send_message(msg)
 
+    @bot_typing
     async def bot_returning(self, peer_id: int) -> None:
         """уведомляет чат о возвращении бота после отключки"""
 
         msg = BotMessage(peer_id=peer_id, text=GamePhrase.bot_returning())
         await self.app.store.vk_api.send_message(msg)
 
+    @bot_typing
     async def restore_command(
         self, peer_id: int, username: str, sex: str
     ) -> None:

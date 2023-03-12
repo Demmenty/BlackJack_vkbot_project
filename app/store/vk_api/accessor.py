@@ -129,6 +129,24 @@ class VkApiAccessor(BaseAccessor):
             data = await response.json()
             self.logger.info(data)
 
+    async def send_activity(self, vk_chat_id: int) -> bool:
+        """посылает статус набора текста,
+        возвращает истину об успешности запроса"""
+
+        url = self._build_query(
+            host=API_PATH,
+            method="messages.setActivity",
+            params={
+                "type": "typing",
+                "peer_id": vk_chat_id,
+                "access_token": self.app.config.bot.token,
+            },
+        )
+        async with self.session.get(url) as response:
+            data = await response.json()
+
+        return bool(data["response"])
+
     async def get_user(self, vk_user_id: int) -> VKUser:
         """получить датакласс пользователя по его id в vk"""
 
