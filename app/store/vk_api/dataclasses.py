@@ -30,7 +30,7 @@ class Button:
 class Keyboard:
     buttons: list[Button]
     one_time: bool = False
-    inline: bool = True
+    inline: bool = False
 
     @property
     def json(self):
@@ -43,3 +43,12 @@ class BotMessage:
     peer_id: int
     text: str
     keyboard: Keyboard = ""
+    attachment: str = ""
+
+
+# инфо о пользователе vk
+@dataclass
+class VKUser:
+    vk_user_id: int
+    name: str
+    sex: str

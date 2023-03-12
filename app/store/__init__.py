@@ -11,6 +11,7 @@ class Store:
         from app.store.admin.accessor import AdminAccessor
         from app.store.bot.manager import BotManager
         from app.store.game.accessor import GameAccessor
+        from app.store.game.handler import GameHandler
         from app.store.game.manager import GameManager
         from app.store.vk_api.accessor import VkApiAccessor
 
@@ -19,6 +20,7 @@ class Store:
         self.vk_api = VkApiAccessor(app)
         self.bot_manager = BotManager(app)
         self.game_manager = GameManager(app)
+        self.game_handler = GameHandler(app)
 
 
 def setup_store(app: "Application"):

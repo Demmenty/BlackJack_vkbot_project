@@ -1,11 +1,12 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
-from sqlalchemy.ext.asyncio import (AsyncEngine, AsyncSession,
-                                    create_async_engine)
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    create_async_engine,
+)
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-from app.admin.models import *
-from app.game.models import *
 from app.store.database import db
 
 if TYPE_CHECKING:
@@ -19,8 +20,7 @@ class Database:
         self._db: Optional[declarative_base] = None
         self.session: Optional[AsyncSession] = None
 
-    async def connect(self, *_: list, **__: dict) -> None:
-
+    async def connect(self, *_: Any, **__: Any) -> None:
         self._db = db
 
         url = (
@@ -48,6 +48,5 @@ class Database:
         )
 
     async def disconnect(self, *_: list, **__: dict) -> None:
-
         if self._engine:
             await self._engine.dispose()
