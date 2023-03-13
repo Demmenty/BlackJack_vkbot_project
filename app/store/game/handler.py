@@ -342,8 +342,9 @@ class GameHandler:
         await self.app.store.game_manager.inactivate_game(game.id)
 
         players = await self.app.store.game.get_players(game.id)
+        start_cash = await self.app.store.game.get_start_cash()
         for player in players:
-            await self.app.store.game.set_player_cash(player.id, new_cash=1000)
+            await self.app.store.game.set_player_cash(player.id, new_cash=start_cash)
 
         await self.notifier.cash_restored(update.peer_id)
         await self.notifier.game_offer(update.peer_id)

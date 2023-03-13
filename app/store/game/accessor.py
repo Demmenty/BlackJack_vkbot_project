@@ -42,9 +42,11 @@ class GameAccessor(BaseAccessor):
     async def create_player(self, vk_id: int, game_id: int) -> PlayerModel:
         """создает и возвращает модель игрока"""
 
+        start_cash = await self.get_start_cash()
+
         async with self.app.database.session() as session:
             async with session.begin():
-                player = PlayerModel(user_id=vk_id, game_id=game_id)
+                player = PlayerModel(user_id=vk_id, game_id=game_id, cash=start_cash)
                 session.add(player)
                 await session.commit()
 
