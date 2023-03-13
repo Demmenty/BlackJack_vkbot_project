@@ -1,6 +1,4 @@
-from aiohttp.web import HTTPForbidden
 from aiohttp_apispec import docs, request_schema, response_schema
-from aiohttp_session import get_session, new_session
 
 from app.game.schemes import StartCashSchema
 from app.web.app import View
