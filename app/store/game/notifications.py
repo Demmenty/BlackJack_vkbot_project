@@ -54,6 +54,9 @@ class GameNotifier(BotNotifier):
         msg = BotMessage(
             peer_id=peer_id,
             text=GamePhrase.game_is_off(),
+            keyboard=Keyboard(
+                buttons=[[GameButton.start, GameButton.rules]]
+            ).json,
         )
         await self.app.store.vk_api.send_message(msg)
 
