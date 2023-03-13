@@ -86,3 +86,13 @@ class VKUserModel(db):
 
     def __repr__(self):
         return f"VKUserModel(id={self.id!r}, name={self.name!r})"
+
+
+class GlobalSettingsModel(db):
+    __tablename__ = "global_settings"
+
+    id = Column(Integer, primary_key=True)
+    start_cash = Column(Integer, default=1000, nullable=False)
+
+    def __repr__(self):
+        return f"GlobalSettingsModel(start_cash={self.start_cash!r})"
