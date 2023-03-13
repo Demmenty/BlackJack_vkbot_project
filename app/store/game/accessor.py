@@ -78,6 +78,19 @@ class GameAccessor(BaseAccessor):
 
         return player
 
+    async def get_players_of_user(self, vk_id: int) -> list[PlayerModel]:
+        """возвращает все модели игрока, соответствующие одному пользователю vk"""
+
+        async with self.app.database.session() as session:
+            async with session.begin():
+                q = select(PlayerModel).filter(
+                    PlayerModel.vk_user.has(vk_id=vk_id)
+                )
+                result = await session.execute(q)
+                players = result.scalars().all()
+
+        return players
+
     async def set_player_cash(
         self, player_id: int, new_cash: int = 1000
     ) -> None:
