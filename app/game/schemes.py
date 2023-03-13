@@ -6,6 +6,7 @@ class ChatStatRequestSchema(Schema):
 
 
 class ChatStatResponseSchema(Schema):
+    chat_id = fields.Int(required=True)
     games_played = fields.Int(required=True)
     casino_cash = fields.Int(required=True)
 

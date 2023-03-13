@@ -32,6 +32,7 @@ class ChatStatView(AuthRequiredMixin, View):
             raise HTTPNotFound(reason="no such chat registered")
 
         data = {
+            "chat_id": chat.vk_id,
             "games_played": chat.games_played,
             "casino_cash": chat.casino_cash,
         }
