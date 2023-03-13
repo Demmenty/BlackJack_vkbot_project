@@ -84,7 +84,8 @@ class VkApiAccessor(BaseAccessor):
         async with self.session.get(url) as response:
             data = await response.json()
             self.logger.info(data)
-            self.ts = data["ts"]
+            if data.get("ts"):
+                self.ts = data["ts"]
             raw_updates = data.get("updates", [])
 
             if raw_updates:
