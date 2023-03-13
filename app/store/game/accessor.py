@@ -1,7 +1,13 @@
 from sqlalchemy import func, select, update
 
 from app.base.base_accessor import BaseAccessor
-from app.game.models import ChatModel, GameModel, PlayerModel, VKUserModel, GlobalSettingsModel
+from app.game.models import (
+    ChatModel,
+    GameModel,
+    GlobalSettingsModel,
+    PlayerModel,
+    VKUserModel,
+)
 from app.game.states import GameState
 
 
@@ -46,7 +52,9 @@ class GameAccessor(BaseAccessor):
 
         async with self.app.database.session() as session:
             async with session.begin():
-                player = PlayerModel(user_id=vk_id, game_id=game_id, cash=start_cash)
+                player = PlayerModel(
+                    user_id=vk_id, game_id=game_id, cash=start_cash
+                )
                 session.add(player)
                 await session.commit()
 
@@ -461,7 +469,6 @@ class GameAccessor(BaseAccessor):
     async def create_global_settings(self) -> None:
         async with self.app.database.session() as session:
             async with session.begin():
-
                 q = select(GlobalSettingsModel)
                 result = await session.execute(q)
                 global_settings = result.scalars().first()
@@ -476,14 +483,11 @@ class GameAccessor(BaseAccessor):
 
         async with self.app.database.session() as session:
             async with session.begin():
-                q = (
-                    select(GlobalSettingsModel.start_cash).filter_by(id=1)
-                )
+                q = select(GlobalSettingsModel.start_cash).filter_by(id=1)
                 result = await session.execute(q)
                 start_cash = result.scalars().first()
 
         return start_cash
-    
 
     async def set_start_cash(self, start_cash: int) -> None:
         """записывает число стартовых монет в бд"""
@@ -491,7 +495,8 @@ class GameAccessor(BaseAccessor):
         async with self.app.database.session() as session:
             async with session.begin():
                 q = (
-                    update(GlobalSettingsModel).filter_by(id=1)
+                    update(GlobalSettingsModel)
+                    .filter_by(id=1)
                     .values(start_cash=start_cash)
                 )
                 await session.execute(q)

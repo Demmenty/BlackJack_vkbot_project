@@ -51,5 +51,5 @@ class GameEventRouter:
 
     def route(self, event: GameEvent) -> Callable[[Update], Awaitable[Any]]:
         """возвращает назначенный на событие обработчик"""
-        
+
         return self.HANDLERS[event]
