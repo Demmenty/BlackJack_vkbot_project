@@ -363,6 +363,10 @@ class GameManager:
         )
 
         chat = await self.app.store.game.get_chat_by_vk_id(vk_chat_id)
+        if not chat:
+            await self.notifier.chat_stat(vk_chat_id, 0, 0)
+            return
+
         await self.notifier.chat_stat(
             vk_chat_id, chat.games_played, chat.casino_cash
         )
