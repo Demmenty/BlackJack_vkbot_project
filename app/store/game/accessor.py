@@ -53,7 +53,9 @@ class GameAccessor(BaseAccessor):
         async with self.app.database.session() as session:
             async with session.begin():
                 player = PlayerModel(
-                    user_id=vk_id, game_id=game_id, cash=global_settings.start_cash
+                    user_id=vk_id,
+                    game_id=game_id,
+                    cash=global_settings.start_cash,
                 )
                 session.add(player)
                 await session.commit()
@@ -478,7 +480,7 @@ class GameAccessor(BaseAccessor):
                     session.add(global_settings)
                     await session.commit()
 
-    async def get_global_settings(self) -> GlobalSettingsModel|None:
+    async def get_global_settings(self) -> GlobalSettingsModel | None:
         """возвращает модель глобальных настроек"""
 
         async with self.app.database.session() as session:
