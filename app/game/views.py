@@ -24,10 +24,14 @@ class ChatStatView(AuthRequiredMixin, View):
     async def get(self):
         request_chat_id = self.request["data"]["chat_id"]
 
+        int32_max = 2147483647
+        int32_min = -2147483648
+        if request_chat_id > int32_max or request_chat_id < int32_min:
+            raise HTTPNotFound(reason="invalid chat id")
+
         chat = await self.request.app.store.game.get_chat_by_vk_id(
             request_chat_id
         )
-
         if not chat:
             raise HTTPNotFound(reason="no such chat registered")
 
