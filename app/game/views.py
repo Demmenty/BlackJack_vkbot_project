@@ -14,10 +14,10 @@ class StartCashView(AuthRequiredMixin, View):
     )
     @response_schema(StartCashSchema, 200)
     async def get(self):
-        start_cash = await self.request.app.store.game.get_start_cash()
+        global_settings = await self.request.app.store.game.get_global_settings()
 
         data = {
-            "start_cash": start_cash,
+            "start_cash": global_settings.start_cash,
         }
         return json_response(data)
 
@@ -31,9 +31,9 @@ class StartCashView(AuthRequiredMixin, View):
     async def post(self):
         request_start_cash = self.request["data"]["start_cash"]
         await self.request.app.store.game.set_start_cash(request_start_cash)
-        start_cash = await self.request.app.store.game.get_start_cash()
+        global_settings = await self.request.app.store.game.get_global_settings()
 
         data = {
-            "start_cash": start_cash,
+            "start_cash": global_settings.start_cash,
         }
         return json_response(data)

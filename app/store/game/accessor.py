@@ -48,12 +48,12 @@ class GameAccessor(BaseAccessor):
     async def create_player(self, vk_id: int, game_id: int) -> PlayerModel:
         """создает и возвращает модель игрока"""
 
-        start_cash = await self.get_start_cash()
+        global_settings = await self.get_global_settings()
 
         async with self.app.database.session() as session:
             async with session.begin():
                 player = PlayerModel(
-                    user_id=vk_id, game_id=game_id, cash=start_cash
+                    user_id=vk_id, game_id=game_id, cash=global_settings.start_cash
                 )
                 session.add(player)
                 await session.commit()
@@ -478,16 +478,16 @@ class GameAccessor(BaseAccessor):
                     session.add(global_settings)
                     await session.commit()
 
-    async def get_start_cash(self) -> int:
-        """возвращает число стартовых монет, определенное в бд"""
+    async def get_global_settings(self) -> GlobalSettingsModel|None:
+        """возвращает модель глобальных настроек"""
 
         async with self.app.database.session() as session:
             async with session.begin():
-                q = select(GlobalSettingsModel.start_cash).filter_by(id=1)
+                q = select(GlobalSettingsModel).filter_by(id=1)
                 result = await session.execute(q)
-                start_cash = result.scalars().first()
+                global_settings = result.scalars().first()
 
-        return start_cash
+        return global_settings
 
     async def set_start_cash(self, start_cash: int) -> None:
         """записывает число стартовых монет в бд"""
