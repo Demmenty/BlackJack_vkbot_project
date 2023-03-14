@@ -7,5 +7,5 @@ if typing.TYPE_CHECKING:
 def setup_routes(app: "Application"):
     from app.game.views import ChatStatView, UserStatView
 
-    app.router.add_view("/game.stat", ChatStatView)
+    app.router.add_view("/chat.stat", ChatStatView)
     app.router.add_view("/user.stat", UserStatView)
