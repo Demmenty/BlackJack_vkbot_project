@@ -71,7 +71,14 @@ class GameHandler:
         )
 
         if not player:
-            vk_user = await self.app.store.game.create_vk_user(update.from_id)
+            vk_user = await self.app.store.game.get_vk_user_by_vk_id(
+                update.from_id
+            )
+            if not vk_user:
+                vk_user = await self.app.store.game.create_vk_user(
+                    update.from_id
+                )
+
             player = await self.app.store.game.create_player(
                 vk_user.id, game.id
             )
