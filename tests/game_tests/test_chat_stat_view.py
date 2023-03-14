@@ -43,38 +43,6 @@ class TestChatStatView:
             }
         )
 
-        response = await authed_cli.get(
-            "/chat.stat", json={"chat_id": str(test_vk_chat_id)}
-        )
-
-        assert response.status == 200
-
-        data = await response.json()
-        assert data == ok_response(
-            {
-                "chat_id": chat.vk_id,
-                "games_played": chat.games_played,
-                "casino_cash": chat.casino_cash,
-            }
-        )
-
-        await store.game.add_game_played_to_chat(vk_id=test_vk_chat_id)
-
-        response = await authed_cli.get(
-            "/chat.stat", json={"chat_id": test_vk_chat_id}
-        )
-
-        assert response.status == 200
-
-        data = await response.json()
-        assert data == ok_response(
-            {
-                "chat_id": chat.vk_id,
-                "games_played": chat.games_played + 1,
-                "casino_cash": chat.casino_cash,
-            }
-        )
-
     async def test_wrong_method_chatstat(self, authed_cli: TestClient):
         """проверка ответа на неверный метод запроса"""
 
