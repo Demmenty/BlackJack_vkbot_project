@@ -1,7 +1,6 @@
 from aiohttp.test_utils import TestClient
 
-from app.game.models import ChatModel, GameModel, PlayerModel, VKUserModel
-from app.store import Store
+from app.game.models import VKUserModel
 from tests.utils import ok_response
 
 
