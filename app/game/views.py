@@ -54,6 +54,11 @@ class UserStatView(AuthRequiredMixin, View):
     async def get(self):
         request_user_id = self.request["data"]["user_id"]
 
+        int32_max = 2147483647
+        int32_min = -2147483648
+        if request_user_id > int32_max or request_user_id < int32_min:
+            raise HTTPNotFound(reason="invalid user id")
+
         players = await self.request.app.store.game.get_players_of_user(
             request_user_id
         )
