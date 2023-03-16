@@ -2,7 +2,7 @@ import random
 import typing
 from pathlib import Path
 from typing import Optional
-
+from logging import getLogger
 from aiohttp import TCPConnector
 from aiohttp.client import ClientSession
 
@@ -21,6 +21,7 @@ API_PATH = "https://api.vk.com/method/"
 class VkApiAccessor(BaseAccessor):
     def __init__(self, app: "Application", *args, **kwargs):
         super().__init__(app, *args, **kwargs)
+        self.logger = getLogger("vk api accessor")
         self.session: Optional[ClientSession] = None
         self.key: Optional[str] = None
         self.server: Optional[str] = None
@@ -84,6 +85,15 @@ class VkApiAccessor(BaseAccessor):
         async with self.session.get(url) as response:
             data = await response.json()
             self.logger.info(data)
+
+            if data.get("failed"):
+                try:
+                    await self._get_long_poll_service()
+                    self.logger.info("long_poll_service renewed")
+                except Exception as error:
+                    self.logger.error("Exception", exc_info=error)
+                return
+
             self.ts = data["ts"]
             raw_updates = data.get("updates", [])
 
