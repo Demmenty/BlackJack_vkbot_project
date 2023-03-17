@@ -12,6 +12,10 @@ class Update:
     action_type: str = ""
     text: str = ""
 
+    @property
+    def json(self):
+        return json.dumps(asdict(self))
+
 
 # клавиатура от бота
 @dataclass

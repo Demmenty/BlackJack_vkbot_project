@@ -28,7 +28,7 @@ class GameManager:
     async def start_game(self, vk_id: int, game_id: int) -> None:
         """запускает новую игру, направляет на стадию сбора игроков"""
 
-        self.logger.info(f"start_game, vk_id={vk_id}, game_id={game_id}\n")
+        self.logger.info(f"start_game, vk_id={vk_id}, game_id={game_id}")
 
         await self.notifier.game_starting(vk_id)
 
@@ -38,7 +38,7 @@ class GameManager:
         """запускает стадию набора игроков"""
 
         self.logger.info(
-            f"gathering_players, vk_id={vk_id}, game_id={game_id}\n"
+            f"gathering_players, vk_id={vk_id}, game_id={game_id}"
         )
 
         await self.app.store.game.set_game_state(game_id, GameState.gathering)
@@ -56,7 +56,7 @@ class GameManager:
     async def collect_players(self, vk_id: int, game_id: int) -> None:
         """проверяет наличие игроков и направляет на стадию ставок, если есть"""
 
-        self.logger.info(f"collect_players, vk_id={vk_id}, game_id={game_id}\n")
+        self.logger.info(f"collect_players, vk_id={vk_id}, game_id={game_id}")
 
         players = await self.app.store.game.get_active_players(game_id)
 
@@ -77,7 +77,7 @@ class GameManager:
     async def start_betting(self, vk_id: int, game_id: int) -> None:
         """запускает ожидание ставок"""
 
-        self.logger.info(f"start_betting, vk_id={vk_id}, game_id={game_id}\n")
+        self.logger.info(f"start_betting, vk_id={vk_id}, game_id={game_id}")
 
         await self.app.store.game.set_game_state(game_id, GameState.betting)
         await self.notifier.waiting_bets(vk_id)
@@ -95,7 +95,7 @@ class GameManager:
         """проверяет наличие ставок игроков, инактивирует непоставивших,
         и направляет на стадию раздачи, если есть поставившие"""
 
-        self.logger.info(f"collect_bets, vk_id={vk_id}, game_id={game_id}\n")
+        self.logger.info(f"collect_bets, vk_id={vk_id}, game_id={game_id}")
 
         players = await self.app.store.game.get_active_players(game_id)
 
@@ -120,7 +120,7 @@ class GameManager:
     async def start_dealing(self, vk_id: int, game_id: int) -> None:
         """запускает стадию раздачи карт"""
 
-        self.logger.info(f"start_dealing, vk_id={vk_id}, game_id={game_id}\n")
+        self.logger.info(f"start_dealing, vk_id={vk_id}, game_id={game_id}")
 
         # сыгранной игрой будет считаться игра, дошедшая до раздачи
         await self.app.store.game.add_game_played_to_chat(vk_id)
@@ -147,7 +147,7 @@ class GameManager:
         """выдает игроку карты в указанном количестве"""
 
         self.logger.info(
-            f"deal_cards_to_player, vk_id={vk_id}, game_id={game_id}, player_id={player_id}\n"
+            f"deal_cards_to_player, vk_id={vk_id}, game_id={game_id}, player_id={player_id}"
         )
 
         cards = [self.deck.take_a_card() for card in range(amount)]
@@ -163,7 +163,7 @@ class GameManager:
         """проверяет сумму карт в руке игрока и делает выводы"""
 
         self.logger.info(
-            f"_check_player_hand, vk_id={vk_id}, game_id={game_id}, player_id={player_id}\n"
+            f"_check_player_hand, vk_id={vk_id}, game_id={game_id}, player_id={player_id}"
         )
 
         player = await self.app.store.game.get_player_by_id(player_id)
@@ -202,7 +202,7 @@ class GameManager:
         """запускает раздачу карт следующему игроку"""
 
         self.logger.info(
-            f"_check_player_hand, vk_id={vk_id}, game_id={game_id}\n"
+            f"_check_player_hand, vk_id={vk_id}, game_id={game_id}"
         )
 
         players = await self.app.store.game.get_active_players(game_id)
@@ -231,7 +231,7 @@ class GameManager:
     async def deal_to_dealer(self, vk_id: int, game_id: int) -> None:
         """запускает раздачу карт дилеру"""
 
-        self.logger.info(f"deal_to_dealer, vk_id={vk_id}, game_id={game_id}\n")
+        self.logger.info(f"deal_to_dealer, vk_id={vk_id}, game_id={game_id}")
 
         await self.app.store.game.set_game_state(
             game_id, GameState.dealing_dealer
@@ -254,7 +254,7 @@ class GameManager:
     async def sum_up_results(self, vk_id: int, game_id: int) -> None:
         """сравнивает очки оставшихся игроков и дилера, подводя итоги"""
 
-        self.logger.info(f"sum_up_results, vk_id={vk_id}, game_id={game_id}\n")
+        self.logger.info(f"sum_up_results, vk_id={vk_id}, game_id={game_id}")
 
         await self.app.store.game.set_game_state(game_id, GameState.results)
 
@@ -293,7 +293,7 @@ class GameManager:
         """засчитывает игроку выигрыш"""
 
         self.logger.info(
-            f"set_player_win, vk_id={vk_id}, player_id={player_id}, blackjack={blackjack}\n"
+            f"set_player_win, vk_id={vk_id}, player_id={player_id}, blackjack={blackjack}"
         )
 
         await self.app.store.game.add_bet_to_cash(vk_id, player_id, blackjack)
@@ -309,7 +309,7 @@ class GameManager:
         """засчитывает игроку ничью"""
 
         self.logger.info(
-            f"set_player_draw, vk_id={vk_id}, player_id={player_id}\n"
+            f"set_player_draw, vk_id={vk_id}, player_id={player_id}"
         )
 
         await self.app.store.game.set_player_bet(player_id, None)
@@ -324,7 +324,7 @@ class GameManager:
         """засчитывает игроку проигрыш"""
 
         self.logger.info(
-            f"set_player_loss, vk_id={vk_id}, player_id={player_id}\n"
+            f"set_player_loss, vk_id={vk_id}, player_id={player_id}"
         )
         # TODO транзакции здесь и в подобных местах
         remaining_cash = await self.app.store.game.withdraw_bet_from_cash(
@@ -345,7 +345,7 @@ class GameManager:
     async def end_game(self, vk_id: int, game_id: int) -> None:
         """заканчивает игру"""
 
-        self.logger.info(f"end_game, vk_id={vk_id}, game_id={game_id}\n")
+        self.logger.info(f"end_game, vk_id={vk_id}, game_id={game_id}")
 
         await self.app.store.game.set_game_state(game_id, GameState.inactive)
         await self.app.store.game.set_current_player(game_id, None)
@@ -359,7 +359,7 @@ class GameManager:
         """отправляет в чат статистику"""
 
         self.logger.info(
-            f"send_statistic, vk_chat_id={vk_chat_id}, vk_user_id={vk_user_id}\n"
+            f"send_statistic, vk_chat_id={vk_chat_id}, vk_user_id={vk_user_id}"
         )
 
         chat = await self.app.store.game.get_chat_by_vk_id(vk_chat_id)
@@ -469,7 +469,7 @@ class GameManager:
     async def inactivate_game(self, game_id: int) -> None:
         """делает игру неактивной и очищает соответствующие поля в базе"""
 
-        self.logger.info(f"inactivate_game, game_id={game_id}\n")
+        self.logger.info(f"inactivate_game, game_id={game_id}")
 
         await self.timer.end_timer(game_id)
 

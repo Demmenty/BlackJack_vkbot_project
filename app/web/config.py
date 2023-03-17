@@ -34,11 +34,17 @@ class DatabaseConfig:
 
 
 @dataclass
+class ServerConfig:
+    host: str = "localhost"
+
+
+@dataclass
 class Config:
     admin: AdminConfig
     session: SessionConfig = None
     bot: BotConfig = None
     database: DatabaseConfig = None
+    server: ServerConfig = None
 
 
 def setup_config(app: "Application", config_path: str):
@@ -58,4 +64,5 @@ def setup_config(app: "Application", config_path: str):
             group_id=raw_config["bot"]["group_id"],
         ),
         database=DatabaseConfig(**raw_config["database"]),
+        server=ServerConfig(host=raw_config["server"]["host"]),
     )
