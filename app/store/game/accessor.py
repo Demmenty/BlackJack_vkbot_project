@@ -31,6 +31,17 @@ class GameAccessor(BaseAccessor):
 
         return vk_user_model
 
+    async def get_vk_user_by_vk_id(self, vk_id: int) -> VKUserModel | None:
+        """возвращает модель пользователя вк по его id в вк"""
+
+        async with self.app.database.session() as session:
+            async with session.begin():
+                q = select(VKUserModel).filter_by(vk_id=vk_id)
+                result = await session.execute(q)
+                vk_user = result.scalars().first()
+
+        return vk_user
+
     async def get_vk_user_by_player(self, player_id: int) -> VKUserModel | None:
         """возвращает модель пользователя вк"""
 
@@ -89,6 +100,19 @@ class GameAccessor(BaseAccessor):
                 player = result.scalars().first()
 
         return player
+
+    async def get_players_of_user(self, vk_id: int) -> list[PlayerModel]:
+        """возвращает все модели игрока, соответствующие одному пользователю vk"""
+
+        async with self.app.database.session() as session:
+            async with session.begin():
+                q = select(PlayerModel).filter(
+                    PlayerModel.vk_user.has(vk_id=vk_id)
+                )
+                result = await session.execute(q)
+                players = result.scalars().all()
+
+        return players
 
     async def set_player_cash(
         self, player_id: int, new_cash: int = 1000
