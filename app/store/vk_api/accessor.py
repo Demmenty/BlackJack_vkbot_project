@@ -7,8 +7,9 @@ from aiohttp import TCPConnector
 from aiohttp.client import ClientSession
 
 from app.base.base_accessor import BaseAccessor
-from app.store.vk_api.dataclasses import BotMessage, Update, VKUser
+from app.store.vk_api.dataclasses import BotMessage, VKUser
 from app.store.vk_api.poller import Poller
+from app.store.vk_api.sender import UpdateSender
 
 if typing.TYPE_CHECKING:
     from app.web.app import Application
@@ -27,6 +28,7 @@ class VkApiAccessor(BaseAccessor):
         self.server: Optional[str] = None
         self.poller: Optional[Poller] = None
         self.ts: Optional[int] = None
+        self.sender = UpdateSender(app)
 
     async def connect(self, app: "Application"):
         self.session = ClientSession(connector=TCPConnector(verify_ssl=False))
@@ -95,30 +97,12 @@ class VkApiAccessor(BaseAccessor):
                 return
 
             self.ts = data["ts"]
+            
             raw_updates = data.get("updates", [])
 
             if raw_updates:
-                updates = await self._prepare_updates(raw_updates)
-                await self.app.store.bot_manager.handle_updates(updates)
-
-    async def _prepare_updates(self, raw_updates: list) -> list[Update]:
-        updates = []
-        for update in raw_updates:
-            if update["object"]["message"].get("action"):
-                action_type = update["object"]["message"]["action"]["type"]
-            else:
-                action_type = ""
-
-            upd = Update(
-                id=update["object"]["message"]["id"],
-                type=update["type"],
-                action_type=action_type,
-                from_id=update["object"]["message"]["from_id"],
-                peer_id=update["object"]["message"]["peer_id"],
-                text=update["object"]["message"]["text"],
-            )
-            updates.append(upd)
-        return updates
+                for raw_update in raw_updates:
+                    await self.sender.send_update(raw_update)
 
     async def send_message(self, message: BotMessage) -> None:
         """посылает сообщение вконтакте"""

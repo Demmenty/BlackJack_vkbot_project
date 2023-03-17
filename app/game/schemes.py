@@ -26,3 +26,7 @@ class PlayerStatSchema(Schema):
     games_played = fields.Int(required=True)
     games_won = fields.Int(required=True)
     games_lost = fields.Int(required=True)
+
+
+class StartCashSchema(Schema):
+    start_cash = fields.Int(required=True)
