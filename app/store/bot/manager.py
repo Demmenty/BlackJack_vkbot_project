@@ -21,7 +21,7 @@ class BotManager:
         self.logger = getLogger("bot handler")
 
     async def handle_update(self, update: Update) -> None:
-        """направляет полученное событие от вк в более специализированный обработчик, 
+        """направляет полученное событие от вк в более специализированный обработчик,
         в зависимости от типа: чат, личка или инвайт"""
 
         if update.from_id == update.peer_id:

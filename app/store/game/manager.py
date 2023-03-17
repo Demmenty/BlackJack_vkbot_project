@@ -37,9 +37,7 @@ class GameManager:
     async def gathering_players(self, vk_id: int, game_id: int) -> None:
         """запускает стадию набора игроков"""
 
-        self.logger.info(
-            f"gathering_players, vk_id={vk_id}, game_id={game_id}"
-        )
+        self.logger.info(f"gathering_players, vk_id={vk_id}, game_id={game_id}")
 
         await self.app.store.game.set_game_state(game_id, GameState.gathering)
         await self.notifier.waiting_players(vk_id)

@@ -3,7 +3,7 @@ from app.store import Store
 
 class TestGlobalSettings:
     async def test_global_settings_created_on_startapp(self, store: Store):
-        """проверка факта создания записи глобальных настроек при запуске 
+        """проверка факта создания записи глобальных настроек при запуске
         с валидными параметрами"""
 
         global_settings = await store.game.get_global_settings()

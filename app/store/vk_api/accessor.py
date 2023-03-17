@@ -1,8 +1,9 @@
 import random
 import typing
+from logging import getLogger
 from pathlib import Path
 from typing import Optional
-from logging import getLogger
+
 from aiohttp import TCPConnector
 from aiohttp.client import ClientSession
 
@@ -97,7 +98,7 @@ class VkApiAccessor(BaseAccessor):
                 return
 
             self.ts = data["ts"]
-            
+
             raw_updates = data.get("updates", [])
 
             if raw_updates:
@@ -138,6 +139,7 @@ class VkApiAccessor(BaseAccessor):
         )
         async with self.session.get(url) as response:
             data = await response.json()
+            self.logger.info(data)
 
         return bool(data["response"])
 

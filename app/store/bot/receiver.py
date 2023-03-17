@@ -29,11 +29,11 @@ class UpdateReceiver:
         await queue.consume(self.route_update)
 
     async def route_update(
-        self, message: aio_pika.abc.AbstractIncomingMessage) -> None:
+        self, message: aio_pika.abc.AbstractIncomingMessage
+    ) -> None:
         """направляет полученный update в обработчик (если это update)"""
 
         async with message.process():
-
             try:
                 data = json.loads(message.body.decode())
                 update = Update(**data)

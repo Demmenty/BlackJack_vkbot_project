@@ -107,7 +107,7 @@ class TestStartCashView:
 
     async def test_negative_startcash_post(self, authed_cli: TestClient):
         """проверка при указании нужного поля с отрицательным значением"""
-        
+
         response = await authed_cli.post(
             "/game.start_cash", json={"start_cash": -1000}
         )

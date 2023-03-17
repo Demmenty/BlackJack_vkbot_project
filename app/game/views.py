@@ -1,15 +1,14 @@
-from aiohttp.web import HTTPNotFound, HTTPBadRequest
+from aiohttp.web import HTTPBadRequest, HTTPNotFound
 from aiohttp_apispec import docs, request_schema, response_schema
 
 from app.game.schemes import (
     ChatStatRequestSchema,
     ChatStatResponseSchema,
     PlayerStatSchema,
+    StartCashSchema,
     UserStatRequestSchema,
     UserStatResponseSchema,
-    StartCashSchema,
 )
-
 from app.web.app import View
 from app.web.mixins import AuthRequiredMixin
 from app.web.utils import json_response
@@ -74,6 +73,7 @@ class UserStatView(AuthRequiredMixin, View):
             "user_id": request_user_id,
             "number_of_gamechats": len(players),
             "player_stat": player_stat,
+        }
 
 
 class StartCashView(AuthRequiredMixin, View):

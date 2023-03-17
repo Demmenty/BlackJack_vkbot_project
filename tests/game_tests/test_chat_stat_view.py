@@ -1,4 +1,5 @@
 from aiohttp.test_utils import TestClient
+
 from app.store import Store
 from tests.utils import ok_response
 
