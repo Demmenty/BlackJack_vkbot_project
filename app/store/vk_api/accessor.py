@@ -2,13 +2,14 @@ import random
 import typing
 from pathlib import Path
 from typing import Optional
-
+from logging import getLogger
 from aiohttp import TCPConnector
 from aiohttp.client import ClientSession
 
 from app.base.base_accessor import BaseAccessor
-from app.store.vk_api.dataclasses import BotMessage, Update, VKUser
+from app.store.vk_api.dataclasses import BotMessage, VKUser
 from app.store.vk_api.poller import Poller
+from app.store.vk_api.sender import UpdateSender
 
 if typing.TYPE_CHECKING:
     from app.web.app import Application
@@ -21,11 +22,13 @@ API_PATH = "https://api.vk.com/method/"
 class VkApiAccessor(BaseAccessor):
     def __init__(self, app: "Application", *args, **kwargs):
         super().__init__(app, *args, **kwargs)
+        self.logger = getLogger("vk api accessor")
         self.session: Optional[ClientSession] = None
         self.key: Optional[str] = None
         self.server: Optional[str] = None
         self.poller: Optional[Poller] = None
         self.ts: Optional[int] = None
+        self.sender = UpdateSender(app)
 
     async def connect(self, app: "Application"):
         self.session = ClientSession(connector=TCPConnector(verify_ssl=False))
@@ -84,31 +87,22 @@ class VkApiAccessor(BaseAccessor):
         async with self.session.get(url) as response:
             data = await response.json()
             self.logger.info(data)
+
+            if data.get("failed"):
+                try:
+                    await self._get_long_poll_service()
+                    self.logger.info("long_poll_service renewed")
+                except Exception as error:
+                    self.logger.error("Exception", exc_info=error)
+                return
+
             self.ts = data["ts"]
+            
             raw_updates = data.get("updates", [])
 
             if raw_updates:
-                updates = await self._prepare_updates(raw_updates)
-                await self.app.store.bot_manager.handle_updates(updates)
-
-    async def _prepare_updates(self, raw_updates: list) -> list[Update]:
-        updates = []
-        for update in raw_updates:
-            if update["object"]["message"].get("action"):
-                action_type = update["object"]["message"]["action"]["type"]
-            else:
-                action_type = ""
-
-            upd = Update(
-                id=update["object"]["message"]["id"],
-                type=update["type"],
-                action_type=action_type,
-                from_id=update["object"]["message"]["from_id"],
-                peer_id=update["object"]["message"]["peer_id"],
-                text=update["object"]["message"]["text"],
-            )
-            updates.append(upd)
-        return updates
+                for raw_update in raw_updates:
+                    await self.sender.send_update(raw_update)
 
     async def send_message(self, message: BotMessage) -> None:
         """посылает сообщение вконтакте"""

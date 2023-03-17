@@ -46,6 +46,7 @@ class Database:
             email=self.app.config.admin.email,
             password=self.app.config.admin.password,
         )
+        await self.app.store.game.create_global_settings()
 
     async def disconnect(self, *_: list, **__: dict) -> None:
         if self._engine:
