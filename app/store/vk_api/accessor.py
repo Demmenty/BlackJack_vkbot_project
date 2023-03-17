@@ -8,6 +8,7 @@ from aiohttp import TCPConnector
 from aiohttp.client import ClientSession
 
 from app.base.base_accessor import BaseAccessor
+from app.store.bot.notifications import BotNotifier
 from app.store.vk_api.dataclasses import BotMessage, VKUser
 from app.store.vk_api.poller import Poller
 from app.store.vk_api.sender import UpdateSender
@@ -30,6 +31,7 @@ class VkApiAccessor(BaseAccessor):
         self.poller: Optional[Poller] = None
         self.ts: Optional[int] = None
         self.sender = UpdateSender(app)
+        self.notifier = BotNotifier(app)
 
     async def connect(self, app: "Application"):
         self.session = ClientSession(connector=TCPConnector(verify_ssl=False))
@@ -124,6 +126,12 @@ class VkApiAccessor(BaseAccessor):
             data = await response.json()
             self.logger.info(data)
 
+            if data.get("error"):
+                await self.notifier.vk_error(
+                    peer_id=message.peer_id,
+                    error_code=data["error"]["error_code"],
+                )
+
     async def send_activity(self, vk_chat_id: int) -> bool:
         """посылает статус набора текста,
         возвращает истину об успешности запроса"""
@@ -140,6 +148,11 @@ class VkApiAccessor(BaseAccessor):
         async with self.session.get(url) as response:
             data = await response.json()
             self.logger.info(data)
+
+            if data.get("error"):
+                await self.notifier.vk_error(
+                    peer_id=vk_chat_id, error_code=data["error"]["error_code"]
+                )
 
         return bool(data.get("response"))
 

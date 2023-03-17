@@ -32,3 +32,12 @@ class BotNotifier:
             text=BotPhrase.no_personal_chating(),
         )
         await self.app.store.vk_api.send_message(msg)
+
+    async def vk_error(self, peer_id: int, error_code: int) -> None:
+        """уведомляет о том, что пришла ошибка от vk вместо ответа"""
+
+        msg = BotMessage(
+            peer_id=peer_id,
+            text=BotPhrase.vk_error(error_code),
+        )
+        await self.app.store.vk_api.send_message(msg)
