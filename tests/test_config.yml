@@ -1,0 +1,14 @@
+session:
+  key: CaY5iCkYtN7DqXdiYK1BvmGrQuaSA4Tl4bEk9my0jc0=
+admin:
+  email: admin@admin.com
+  password: admin
+database:
+  host: localhost
+  port: 5432
+  user: postgres
+  password: password
+  database: vkbot_testbase
+bot:
+  token: group_token
+  group_id: 1

@@ -1,0 +1,16 @@
+session:
+  key: session_key
+admin:
+  email: admin@admin.com
+  password: admin
+database:
+  host: localhost
+  port: 5432
+  user: postgres
+  password: password
+  database: vkbot_base
+bot:
+  token: group_token
+  group_id: 1
+server:
+  host: localhost
