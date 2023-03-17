@@ -141,7 +141,7 @@ class VkApiAccessor(BaseAccessor):
             data = await response.json()
             self.logger.info(data)
 
-        return bool(data["response"])
+        return bool(data.get("response"))
 
     async def get_user(self, vk_user_id: int) -> VKUser:
         """получить датакласс пользователя по его id в vk"""
