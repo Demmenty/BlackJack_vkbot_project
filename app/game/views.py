@@ -74,6 +74,7 @@ class UserStatView(AuthRequiredMixin, View):
             "number_of_gamechats": len(players),
             "player_stat": player_stat,
         }
+        return json_response(data)
 
 
 class StartCashView(AuthRequiredMixin, View):
