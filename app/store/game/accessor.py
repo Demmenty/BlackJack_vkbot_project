@@ -1,7 +1,13 @@
 from sqlalchemy import func, select, update
 
 from app.base.base_accessor import BaseAccessor
-from app.game.models import ChatModel, GameModel, PlayerModel, VKUserModel
+from app.game.models import (
+    ChatModel,
+    GameModel,
+    GlobalSettingsModel,
+    PlayerModel,
+    VKUserModel,
+)
 from app.game.states import GameState
 
 
@@ -42,9 +48,15 @@ class GameAccessor(BaseAccessor):
     async def create_player(self, vk_id: int, game_id: int) -> PlayerModel:
         """создает и возвращает модель игрока"""
 
+        global_settings = await self.get_global_settings()
+
         async with self.app.database.session() as session:
             async with session.begin():
-                player = PlayerModel(user_id=vk_id, game_id=game_id)
+                player = PlayerModel(
+                    user_id=vk_id,
+                    game_id=game_id,
+                    cash=global_settings.start_cash,
+                )
                 session.add(player)
                 await session.commit()
 
@@ -452,5 +464,41 @@ class GameAccessor(BaseAccessor):
                     update(GameModel)
                     .filter_by(id=game_id)
                     .values(dealer_hand={"cards": []})
+                )
+                await session.execute(q)
+
+    # global_settings
+    async def create_global_settings(self) -> None:
+        async with self.app.database.session() as session:
+            async with session.begin():
+                q = select(GlobalSettingsModel)
+                result = await session.execute(q)
+                global_settings = result.scalars().first()
+
+                if not global_settings:
+                    global_settings = GlobalSettingsModel()
+                    session.add(global_settings)
+                    await session.commit()
+
+    async def get_global_settings(self) -> GlobalSettingsModel | None:
+        """возвращает модель глобальных настроек"""
+
+        async with self.app.database.session() as session:
+            async with session.begin():
+                q = select(GlobalSettingsModel).filter_by(id=1)
+                result = await session.execute(q)
+                global_settings = result.scalars().first()
+
+        return global_settings
+
+    async def set_start_cash(self, start_cash: int) -> None:
+        """записывает число стартовых монет в бд"""
+
+        async with self.app.database.session() as session:
+            async with session.begin():
+                q = (
+                    update(GlobalSettingsModel)
+                    .filter_by(id=1)
+                    .values(start_cash=start_cash)
                 )
                 await session.execute(q)
