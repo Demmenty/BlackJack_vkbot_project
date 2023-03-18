@@ -13,7 +13,6 @@ def bot_typing(method: Callable[[int, Any], Awaitable[None]], sec: int = 3):
     по умолчанию = 3 секунды"""
 
     async def wrapper(self: "BotNotifier", *args, **kwargs):
-
         vk_chat_id = kwargs.get("peer_id")
         if not vk_chat_id:
             vk_chat_id = args[0]

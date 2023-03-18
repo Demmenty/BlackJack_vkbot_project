@@ -71,7 +71,14 @@ class GameHandler:
         )
 
         if not player:
-            vk_user = await self.app.store.game.create_vk_user(update.from_id)
+            vk_user = await self.app.store.game.get_vk_user_by_vk_id(
+                update.from_id
+            )
+            if not vk_user:
+                vk_user = await self.app.store.game.create_vk_user(
+                    update.from_id
+                )
+
             player = await self.app.store.game.create_player(
                 vk_user.id, game.id
             )
@@ -342,8 +349,11 @@ class GameHandler:
         await self.app.store.game_manager.inactivate_game(game.id)
 
         players = await self.app.store.game.get_players(game.id)
+        global_settings = await self.app.store.game.get_global_settings()
         for player in players:
-            await self.app.store.game.set_player_cash(player.id, new_cash=1000)
+            await self.app.store.game.set_player_cash(
+                player.id, new_cash=global_settings.start_cash
+            )
 
         await self.notifier.cash_restored(update.peer_id)
         await self.notifier.game_offer(update.peer_id)

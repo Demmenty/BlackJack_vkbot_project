@@ -2,6 +2,7 @@ import typing
 from logging import getLogger
 
 from app.store.bot.notifications import BotNotifier
+from app.store.bot.receiver import UpdateReceiver
 from app.store.game.router import GameEventRouter
 from app.store.vk_api.dataclasses import Update
 
@@ -16,21 +17,21 @@ class BotManager:
         self.app = app
         self.notifier = BotNotifier(app)
         self.router = GameEventRouter(app)
-        self.logger = getLogger("handler")
+        self.receiver = UpdateReceiver(app)
+        self.logger = getLogger("bot handler")
 
-    async def handle_updates(self, updates: list[Update]) -> None:
-        """сюда поступают все полученные события от вк"""
+    async def handle_update(self, update: Update) -> None:
+        """направляет полученное событие от вк в более специализированный обработчик,
+        в зависимости от типа: чат, личка или инвайт"""
 
-        for update in updates:
-            # сообщение в личке
-            if update.from_id == update.peer_id:
-                await self.handle_private_msg(update)
-            # приглашение в чат
-            elif update.action_type == "chat_invite_user":
-                await self.handle_chat_invite(update)
-            # сообщение в чате
-            else:
-                await self.handle_chat_msg(update)
+        if update.from_id == update.peer_id:
+            await self.handle_private_msg(update)
+
+        elif update.action_type == "chat_invite_user":
+            await self.handle_chat_invite(update)
+
+        else:
+            await self.handle_chat_msg(update)
 
     async def handle_private_msg(self, update: Update) -> None:
         """обработка сообщения в личке"""

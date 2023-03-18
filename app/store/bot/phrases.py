@@ -17,3 +17,6 @@ class BotPhrase:
 
     def no_personal_chating() -> str:
         return f"Призрак не обращает на вас внимания. Одинокие путники ему не интересны."
+
+    def vk_error(error_code: int) -> str:
+        return "Завывания ветра глушат вас. Сегодня здесь бушует непогода..."

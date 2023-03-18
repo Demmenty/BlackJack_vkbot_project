@@ -10,7 +10,7 @@ from app.web.utils import json_response
 
 class AdminLoginView(View):
     @docs(
-        tags=["admin"], summary="Admin login", description="Admin authorization"
+        tags=["admin"], summary="admin login", description="Admin authorization"
     )
     @request_schema(AdminLoginSchema)
     @response_schema(AdminCurrentSchema, 200)
@@ -40,7 +40,7 @@ class AdminLoginView(View):
 class AdminCurrentView(AuthRequiredMixin, View):
     @docs(
         tags=["admin"],
-        summary="Admin view",
+        summary="admin view",
         description="Returns data about current admin, if authorized",
     )
     @response_schema(AdminCurrentSchema, 200)
