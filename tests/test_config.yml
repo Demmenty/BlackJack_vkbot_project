@@ -12,3 +12,5 @@ database:
 bot:
   token: group_token
   group_id: 1
+server:
+  host: localhost
