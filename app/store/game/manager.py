@@ -410,14 +410,26 @@ class GameManager:
         """восстанавливает активную игру после отключения сервера"""
 
         if game.state == GameState.gathering:
+            self.logger.info(f"recovery_game, vk_chat_id={vk_chat_id}, game={game}")
             await self.gathering_players(vk_chat_id, game.id)
             return
 
         if game.state == GameState.betting:
-            await self.start_betting(vk_chat_id, game.id)
+            self.logger.info(f"recovery_game, vk_chat_id={vk_chat_id}, game={game}")
+            active_players = await self.app.store.game.get_active_players(game.id)
+
+            if all(player.bet for player in active_players):
+                await self.notifier.all_bets_placed(vk_chat_id)
+                await self.app.store.game_manager.start_dealing(
+                    vk_chat_id, game.id
+                )
+            else:
+                await self.start_betting(vk_chat_id, game.id)
+
             return
 
         if game.state == GameState.dealing_players:
+            self.logger.info(f"recovery_game, vk_chat_id={vk_chat_id}, game={game}")
             if not game.current_player_id:
                 await self.start_dealing(vk_chat_id, game.id)
                 return
@@ -425,15 +437,18 @@ class GameManager:
             current_player = await self.app.store.game.get_player_by_id(
                 game.current_player_id
             )
+            vk_user = await self.app.store.game.get_vk_user_by_player(
+                current_player.id
+            )
 
             if current_player.hand:
+                await self.notifier.player_hand(
+                    vk_chat_id, vk_user.name, current_player.hand["cards"]
+                )
                 await self.check_player_hand(
                     vk_chat_id, game.id, current_player.id
                 )
             else:
-                vk_user = await self.app.store.game.get_vk_user_by_player(
-                    current_player.id
-                )
                 await self.notifier.player_turn(
                     vk_chat_id, vk_user.name, vk_user.sex
                 )
@@ -444,27 +459,29 @@ class GameManager:
             return
 
         if game.state == GameState.dealing_dealer:
-            if game.dealer_hand:
-                await self.notifier.deal_to_dealer(vk_chat_id)
+            self.logger.info(f"recovery_game, vk_chat_id={vk_chat_id}, game={game}")
 
-                if not game.dealer_points:
-                    dealer_points = self.deck.count_points(
-                        game.dealer_hand["cards"]
-                    )
-                    await self.app.store.game.set_dealer_points(
-                        game.id, dealer_points
-                    )
-
-                await self.notifier.cards_received(
-                    vk_chat_id, game.dealer_hand["cards"]
-                )
-                await self.sum_up_results(vk_chat_id, game.id)
-
-            else:
+            if not game.dealer_hand["cards"]:
                 await self.deal_to_dealer(vk_chat_id, game.id)
-            return
+                return
+            
+            await self.notifier.deal_to_dealer(vk_chat_id)
+
+            if not game.dealer_points:
+                dealer_points = self.deck.count_points(
+                    game.dealer_hand["cards"]
+                )
+                await self.app.store.game.set_dealer_points(
+                    game.id, dealer_points
+                )
+
+            await self.notifier.cards_received(
+                vk_chat_id, game.dealer_hand["cards"]
+            )
+            await self.sum_up_results(vk_chat_id, game.id)
 
         if game.state == GameState.results:
+            self.logger.info(f"recovery_game, vk_chat_id={vk_chat_id}, game={game}")
             await self.sum_up_results(vk_chat_id, game.id)
             return
 
