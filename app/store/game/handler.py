@@ -281,6 +281,9 @@ class GameHandler:
             vk_user = await self.app.store.vk_api.get_user(update.from_id)
             await self.notifier.not_a_player_cash(update.peer_id, vk_user.name)
             return
+        
+        if player.bet:
+            player.cash -= player.bet
 
         vk_user = await self.app.store.game.get_vk_user_by_player(player.id)
         await self.notifier.show_cash(update.peer_id, vk_user.name, player.cash)
