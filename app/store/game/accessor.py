@@ -528,3 +528,84 @@ class GameAccessor(BaseAccessor):
                     .values(start_cash=start_cash)
                 )
                 await session.execute(q)
+
+    # комплексные транзакции
+    async def set_player_win(
+        self, player_id: int, blackjack: bool = False) -> None:
+        """регистрирует победу игрока:
+        увеличивает баланс на ставку,
+        вносит инфо в статистику,
+        инактивирует игрока и очищает нужные поля"""
+
+        async with self.app.database.session() as session:
+            async with session.begin():
+                q = select(PlayerModel).filter_by(id=player_id)
+                result = await session.execute(q)
+                player: PlayerModel = result.scalars().first()
+
+                q = select(ChatModel).filter(ChatModel.game.any(id=player.game_id))
+                result = await session.execute(q)
+                chat: ChatModel = result.scalars().first()
+
+                if blackjack:
+                    player_bet = player.bet * 1.5
+                else:
+                    player_bet = player.bet
+
+                chat.casino_cash -= player_bet
+
+                player.cash += player_bet
+                player.bet = None
+                player.hand = {"cards": []}
+                player.is_active = False
+                player.games_played += 1
+                player.games_won += 1
+
+                await session.commit()
+
+    async def set_player_loss(
+        self, player_id: int) -> None:
+        """регистрирует проигрыш игрока:
+        уменьшает баланс на ставку,
+        вносит инфо в статистику,
+        инактивирует игрока и очищает нужные поля"""
+
+        async with self.app.database.session() as session:
+            async with session.begin():
+                q = select(PlayerModel).filter_by(id=player_id)
+                result = await session.execute(q)
+                player: PlayerModel = result.scalars().first()
+
+                q = select(ChatModel).filter(ChatModel.game.any(id=player.game_id))
+                result = await session.execute(q)
+                chat: ChatModel = result.scalars().first()
+
+                chat.casino_cash += player.bet
+
+                player.cash -= player.bet
+                player.bet = None
+                player.hand = {"cards": []}
+                player.is_active = False
+                player.games_played += 1
+                player.games_lost += 1
+
+                await session.commit()
+
+    async def set_player_draw(
+        self, player_id: int) -> None:
+        """регистрирует ничью:
+        вносит инфо в статистику,
+        инактивирует игрока и очищает нужные поля"""
+
+        async with self.app.database.session() as session:
+            async with session.begin():
+                q = select(PlayerModel).filter_by(id=player_id)
+                result = await session.execute(q)
+                player: PlayerModel = result.scalars().first()
+
+                player.bet = None
+                player.hand = {"cards": []}
+                player.is_active = False
+                player.games_played += 1
+
+                await session.commit()

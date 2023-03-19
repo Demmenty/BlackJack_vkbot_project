@@ -296,11 +296,7 @@ class GameManager:
             f"set_player_win, vk_id={vk_id}, player_id={player_id}, blackjack={blackjack}"
         )
 
-        await self.app.store.game.add_bet_to_cash(vk_id, player_id, blackjack)
-        await self.app.store.game.clear_player_hand(player_id)
-        await self.app.store.game.set_player_state(player_id, False)
-        await self.app.store.game.add_game_played_to_player(player_id)
-        await self.app.store.game.add_game_win_to_player(player_id)
+        await self.app.store.game.set_player_win(player_id, blackjack)
 
         vk_user = await self.app.store.game.get_vk_user_by_player(player_id)
         await self.notifier.player_win(vk_id, vk_user.name, blackjack)
@@ -312,10 +308,7 @@ class GameManager:
             f"set_player_draw, vk_id={vk_id}, player_id={player_id}"
         )
 
-        await self.app.store.game.set_player_bet(player_id, None)
-        await self.app.store.game.clear_player_hand(player_id)
-        await self.app.store.game.set_player_state(player_id, False)
-        await self.app.store.game.add_game_played_to_player(player_id)
+        await self.app.store.game.set_player_draw(player_id)
 
         vk_user = await self.app.store.game.get_vk_user_by_player(player_id)
         await self.notifier.player_draw(vk_id, vk_user.name)
@@ -326,18 +319,14 @@ class GameManager:
         self.logger.info(
             f"set_player_loss, vk_id={vk_id}, player_id={player_id}"
         )
-        # TODO транзакции здесь и в подобных местах
-        remaining_cash = await self.app.store.game.withdraw_bet_from_cash(
-            vk_id, player_id
-        )
-        await self.app.store.game.clear_player_hand(player_id)
-        await self.app.store.game.set_player_state(player_id, False)
-        await self.app.store.game.add_game_played_to_player(player_id)
-        await self.app.store.game.add_game_loss_to_player(player_id)
+
+        await self.app.store.game.set_player_loss(player_id)
 
         vk_user = await self.app.store.game.get_vk_user_by_player(player_id)
         await self.notifier.player_loss(vk_id, vk_user.name)
-        if not remaining_cash:
+
+        player = await self.app.store.game.get_player_by_id(player_id)
+        if not player.cash:
             await self.notifier.last_cash_spent(
                 vk_id, vk_user.name, vk_user.sex
             )
