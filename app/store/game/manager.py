@@ -407,7 +407,22 @@ class GameManager:
             self.logger.info(
                 f"recovery_game, vk_chat_id={vk_chat_id}, game={game}"
             )
-            await self.gathering_players(vk_chat_id, game.id)
+            all_play = await self.app.store.game_handler._is_all_play(
+                vk_chat_id, game.id
+            )
+
+            if all_play:
+                await self.app.store.game_manager.timer.end_timer(game.id)
+
+                losers = await self.app.store.game.count_losers(game.id)
+                await self.notifier.all_play(vk_chat_id, losers)
+
+                await self.app.store.game_manager.start_betting(
+                    vk_chat_id, game.id
+                )
+            else:
+                await self.gathering_players(vk_chat_id, game.id)
+
             return
 
         if game.state == GameState.betting:
