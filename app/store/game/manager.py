@@ -261,6 +261,10 @@ class GameManager:
         players = await self.app.store.game.get_active_players(game_id)
         game = await self.app.store.game.get_game_by_id(game_id)
 
+        if not game.dealer_points:
+            await self.inactivate_game(game_id)
+            return
+
         if game.dealer_points > 21:
             for player in players:
                 if self.deck.is_blackjack(player.hand["cards"]):
@@ -296,10 +300,10 @@ class GameManager:
             f"set_player_win, vk_id={vk_id}, player_id={player_id}, blackjack={blackjack}"
         )
 
-        await self.app.store.game.set_player_win(player_id, blackjack)
-
         vk_user = await self.app.store.game.get_vk_user_by_player(player_id)
         await self.notifier.player_win(vk_id, vk_user.name, blackjack)
+
+        await self.app.store.game.set_player_win(player_id, blackjack)
 
     async def set_player_draw(self, vk_id: int, player_id: int) -> None:
         """засчитывает игроку ничью"""
@@ -308,10 +312,10 @@ class GameManager:
             f"set_player_draw, vk_id={vk_id}, player_id={player_id}"
         )
 
-        await self.app.store.game.set_player_draw(player_id)
-
         vk_user = await self.app.store.game.get_vk_user_by_player(player_id)
         await self.notifier.player_draw(vk_id, vk_user.name)
+
+        await self.app.store.game.set_player_draw(player_id)
 
     async def set_player_loss(self, vk_id: int, player_id: int) -> None:
         """засчитывает игроку проигрыш"""
@@ -320,10 +324,10 @@ class GameManager:
             f"set_player_loss, vk_id={vk_id}, player_id={player_id}"
         )
 
-        await self.app.store.game.set_player_loss(player_id)
-
         vk_user = await self.app.store.game.get_vk_user_by_player(player_id)
         await self.notifier.player_loss(vk_id, vk_user.name)
+
+        await self.app.store.game.set_player_loss(player_id)
 
         player = await self.app.store.game.get_player_by_id(player_id)
         if not player.cash:
@@ -439,7 +443,7 @@ class GameManager:
                 current_player.id
             )
 
-            if current_player.hand:
+            if current_player.hand["cards"]:
                 await self.notifier.player_hand(
                     vk_chat_id, vk_user.name, current_player.hand["cards"]
                 )
@@ -486,8 +490,6 @@ class GameManager:
 
         game = await self.app.store.game.get_game_by_id(game_id)
 
-        await self.app.store.game.set_game_state(game.id, GameState.inactive)
-
         if game.current_player_id:
             await self.app.store.game.set_current_player(game.id, None)
         if game.dealer_hand["cards"]:
@@ -496,11 +498,13 @@ class GameManager:
         active_players = await self.app.store.game.get_active_players(game.id)
 
         for player in active_players:
-            await self.app.store.game.set_player_state(player.id, False)
             if player.bet:
                 await self.app.store.game.set_player_bet(player.id, None)
             if player.hand["cards"]:
                 await self.app.store.game.clear_player_hand(player.id)
+            await self.app.store.game.set_player_state(player.id, False)
+
+        await self.app.store.game.set_game_state(game.id, GameState.inactive)
 
     async def disconnect(self, app: "Application") -> None:
         """проверка при отключении на наличие активных игр.
