@@ -259,9 +259,9 @@ class GameManager:
         await self.app.store.game.set_game_state(game_id, GameState.results)
 
         players = await self.app.store.game.get_active_players(game_id)
-        dealer_points = await self.app.store.game.get_dealer_points(game_id)
+        game = await self.app.store.game.get_game_by_id(game_id)
 
-        if dealer_points > 21:
+        if game.dealer_points > 21:
             for player in players:
                 if self.deck.is_blackjack(player.hand["cards"]):
                     await self.set_player_win(vk_id, player.id, blackjack=True)
@@ -273,13 +273,13 @@ class GameManager:
 
                 if (
                     self.deck.is_blackjack(player.hand["cards"])
-                    and dealer_points < 21
+                    and game.dealer_points < 21
                 ):
                     await self.set_player_win(vk_id, player.id, blackjack=True)
-                elif player_points < dealer_points:
+                elif player_points < game.dealer_points:
                     await self.set_player_loss(vk_id, player.id)
 
-                elif player_points > dealer_points:
+                elif player_points > game.dealer_points:
                     await self.set_player_win(vk_id, player.id)
 
                 else:
@@ -338,8 +338,7 @@ class GameManager:
 
         await self.app.store.game.set_game_state(game_id, GameState.inactive)
         await self.app.store.game.set_current_player(game_id, None)
-        await self.app.store.game.clear_dealer_hand(game_id)
-        await self.app.store.game.set_dealer_points(game_id, None)
+        await self.app.store.game.clear_dealer_hand_and_points(game_id)
 
         await self.notifier.game_ended(vk_id)
         await self.notifier.game_offer(vk_id, again=True)
@@ -492,9 +491,7 @@ class GameManager:
         if game.current_player_id:
             await self.app.store.game.set_current_player(game.id, None)
         if game.dealer_hand["cards"]:
-            await self.app.store.game.clear_dealer_hand(game.id)
-        if game.dealer_points:
-            await self.app.store.game.set_dealer_points(game.id, None)
+            await self.app.store.game.clear_dealer_hand_and_points(game.id)
 
         active_players = await self.app.store.game.get_active_players(game.id)
 

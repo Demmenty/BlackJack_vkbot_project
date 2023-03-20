@@ -442,41 +442,6 @@ class GameAccessor(BaseAccessor):
                 )
                 await session.execute(q)
 
-    async def set_dealer_points(self, game_id: int, points: int | None) -> None:
-        """записывает набранные дилером очки"""
-
-        async with self.app.database.session() as session:
-            async with session.begin():
-                q = (
-                    update(GameModel)
-                    .filter_by(id=game_id)
-                    .values(dealer_points=points)
-                )
-                await session.execute(q)
-
-    async def get_dealer_points(self, game_id: int) -> int:
-        """возвращает набранные дилером очки"""
-
-        async with self.app.database.session() as session:
-            async with session.begin():
-                q = select(GameModel.dealer_points).filter_by(id=game_id)
-                result = await session.execute(q)
-                dealer_points = result.scalars().first()
-
-        return dealer_points
-
-    async def clear_dealer_hand(self, game_id: int) -> None:
-        """опустошает руку дилера от карт"""
-
-        async with self.app.database.session() as session:
-            async with session.begin():
-                q = (
-                    update(GameModel)
-                    .filter_by(id=game_id)
-                    .values(dealer_hand={"cards": []})
-                )
-                await session.execute(q)
-
     async def set_dealer_hand_and_points(
         self, game_id: int, cards: list[str], points: int | None
     ) -> None:
@@ -492,6 +457,19 @@ class GameAccessor(BaseAccessor):
                     .values(dealer_points=points, dealer_hand=new_hand)
                 )
                 await session.execute(q)
+
+    async def clear_dealer_hand_and_points(self, game_id: int) -> None:
+        """опустошает руку дилера от карт и удаляет очки"""
+
+        async with self.app.database.session() as session:
+            async with session.begin():
+                q = (
+                    update(GameModel)
+                    .filter_by(id=game_id)
+                    .values(dealer_hand={"cards": []}, dealer_points=None)
+                )
+                await session.execute(q)
+
 
     # global_settings
     async def create_global_settings(self) -> None:
