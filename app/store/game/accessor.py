@@ -470,7 +470,6 @@ class GameAccessor(BaseAccessor):
                 )
                 await session.execute(q)
 
-
     # global_settings
     async def create_global_settings(self) -> None:
         async with self.app.database.session() as session:
@@ -509,7 +508,8 @@ class GameAccessor(BaseAccessor):
 
     # комплексные транзакции
     async def set_player_win(
-        self, player_id: int, blackjack: bool = False) -> None:
+        self, player_id: int, blackjack: bool = False
+    ) -> None:
         """регистрирует победу игрока:
         увеличивает баланс на ставку,
         вносит инфо в статистику,
@@ -521,7 +521,9 @@ class GameAccessor(BaseAccessor):
                 result = await session.execute(q)
                 player: PlayerModel = result.scalars().first()
 
-                q = select(ChatModel).filter(ChatModel.game.any(id=player.game_id))
+                q = select(ChatModel).filter(
+                    ChatModel.game.any(id=player.game_id)
+                )
                 result = await session.execute(q)
                 chat: ChatModel = result.scalars().first()
 
@@ -541,8 +543,7 @@ class GameAccessor(BaseAccessor):
 
                 await session.commit()
 
-    async def set_player_loss(
-        self, player_id: int) -> None:
+    async def set_player_loss(self, player_id: int) -> None:
         """регистрирует проигрыш игрока:
         уменьшает баланс на ставку,
         вносит инфо в статистику,
@@ -554,7 +555,9 @@ class GameAccessor(BaseAccessor):
                 result = await session.execute(q)
                 player: PlayerModel = result.scalars().first()
 
-                q = select(ChatModel).filter(ChatModel.game.any(id=player.game_id))
+                q = select(ChatModel).filter(
+                    ChatModel.game.any(id=player.game_id)
+                )
                 result = await session.execute(q)
                 chat: ChatModel = result.scalars().first()
 
@@ -569,8 +572,7 @@ class GameAccessor(BaseAccessor):
 
                 await session.commit()
 
-    async def set_player_draw(
-        self, player_id: int) -> None:
+    async def set_player_draw(self, player_id: int) -> None:
         """регистрирует ничью:
         вносит инфо в статистику,
         инактивирует игрока и очищает нужные поля"""
