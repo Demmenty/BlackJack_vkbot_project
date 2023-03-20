@@ -309,7 +309,9 @@ class GameHandler:
         await self.notifier.game_aborted(update.peer_id, causer.name)
 
     @game_must_be_on
-    @game_must_be_on_state(GameState.dealing_players, GameState.dealing_dealer)
+    @game_must_be_on_state(
+        GameState.dealing_players, GameState.dealing_dealer, GameState.results
+    )
     async def cancel_game(self, update: Update) -> None:
         """досрочно останавливает игру"""
 
