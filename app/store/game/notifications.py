@@ -302,6 +302,7 @@ class GameNotifier(BotNotifier):
         msg = BotMessage(
             peer_id=peer_id,
             text=GamePhrase.dealing_started(),
+            keyboard=Keyboard(buttons=[]).json,
         )
         await self.app.store.vk_api.send_message(msg)
 
@@ -468,6 +469,7 @@ class GameNotifier(BotNotifier):
         msg = BotMessage(
             peer_id=peer_id,
             text=GamePhrase.deal_to_dealer(),
+            keyboard=Keyboard(buttons=[]).json,
         )
         await self.app.store.vk_api.send_message(msg)
 
