@@ -86,7 +86,7 @@ class GamePhrase:
             players = " и ".join(players)
             phrase = f"{players} решили испытать удачу."
         else:
-            players = " и ".join(players[:-1]) + " и " + players[-1]
+            players = ", ".join(players[:-1]) + " и " + players[-1]
             phrase = f"{players} собрались за столом в ожидании игры."
         return phrase
 
