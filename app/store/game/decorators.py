@@ -1,9 +1,12 @@
 import typing
 
+from sqlalchemy.exc import OperationalError
+
 from app.game.states import GameState
 from app.store.vk_api.dataclasses import Update
 
 if typing.TYPE_CHECKING:
+    from app.store.game.accessor import GameAccessor
     from app.store.game.manager import GameManager
 
 
@@ -54,6 +57,16 @@ def game_must_be_on_state(*states: GameState):
         return wrapper
 
     return decorator
+
+
+def catch_db_error(method):
+    async def wrapper(self: "GameAccessor", *args, **kwargs):
+        try:
+            return await method(self, *args, **kwargs)
+        except OperationalError:
+            return await method(self, *args, **kwargs)
+
+    return wrapper
 
 
 # TODO @user_must_be_a_player
