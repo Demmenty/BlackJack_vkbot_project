@@ -243,8 +243,10 @@ class GameManager:
             dealer_cards.append(self.deck.take_a_card())
             dealer_points = self.deck.count_points(dealer_cards)
 
-        await self.app.store.game.set_dealer_hand(game_id, dealer_cards)
-        await self.app.store.game.set_dealer_points(game_id, dealer_points)
+        await self.app.store.game.set_dealer_hand_and_points(
+            game_id, dealer_cards, dealer_points
+        )
+
         await self.notifier.cards_received(vk_id, dealer_cards)
 
         await self.sum_up_results(vk_id, game_id)
@@ -257,9 +259,13 @@ class GameManager:
         await self.app.store.game.set_game_state(game_id, GameState.results)
 
         players = await self.app.store.game.get_active_players(game_id)
-        dealer_points = await self.app.store.game.get_dealer_points(game_id)
+        game = await self.app.store.game.get_game_by_id(game_id)
 
-        if dealer_points > 21:
+        if not game.dealer_points:
+            await self.inactivate_game(game_id)
+            return
+
+        if game.dealer_points > 21:
             for player in players:
                 if self.deck.is_blackjack(player.hand["cards"]):
                     await self.set_player_win(vk_id, player.id, blackjack=True)
@@ -271,13 +277,13 @@ class GameManager:
 
                 if (
                     self.deck.is_blackjack(player.hand["cards"])
-                    and dealer_points < 21
+                    and game.dealer_points < 21
                 ):
                     await self.set_player_win(vk_id, player.id, blackjack=True)
-                elif player_points < dealer_points:
+                elif player_points < game.dealer_points:
                     await self.set_player_loss(vk_id, player.id)
 
-                elif player_points > dealer_points:
+                elif player_points > game.dealer_points:
                     await self.set_player_win(vk_id, player.id)
 
                 else:
@@ -294,14 +300,10 @@ class GameManager:
             f"set_player_win, vk_id={vk_id}, player_id={player_id}, blackjack={blackjack}"
         )
 
-        await self.app.store.game.add_bet_to_cash(vk_id, player_id, blackjack)
-        await self.app.store.game.clear_player_hand(player_id)
-        await self.app.store.game.set_player_state(player_id, False)
-        await self.app.store.game.add_game_played_to_player(player_id)
-        await self.app.store.game.add_game_win_to_player(player_id)
-
         vk_user = await self.app.store.game.get_vk_user_by_player(player_id)
         await self.notifier.player_win(vk_id, vk_user.name, blackjack)
+
+        await self.app.store.game.set_player_win(player_id, blackjack)
 
     async def set_player_draw(self, vk_id: int, player_id: int) -> None:
         """засчитывает игроку ничью"""
@@ -310,13 +312,10 @@ class GameManager:
             f"set_player_draw, vk_id={vk_id}, player_id={player_id}"
         )
 
-        await self.app.store.game.set_player_bet(player_id, None)
-        await self.app.store.game.clear_player_hand(player_id)
-        await self.app.store.game.set_player_state(player_id, False)
-        await self.app.store.game.add_game_played_to_player(player_id)
-
         vk_user = await self.app.store.game.get_vk_user_by_player(player_id)
         await self.notifier.player_draw(vk_id, vk_user.name)
+
+        await self.app.store.game.set_player_draw(player_id)
 
     async def set_player_loss(self, vk_id: int, player_id: int) -> None:
         """засчитывает игроку проигрыш"""
@@ -324,18 +323,14 @@ class GameManager:
         self.logger.info(
             f"set_player_loss, vk_id={vk_id}, player_id={player_id}"
         )
-        # TODO транзакции здесь и в подобных местах
-        remaining_cash = await self.app.store.game.withdraw_bet_from_cash(
-            vk_id, player_id
-        )
-        await self.app.store.game.clear_player_hand(player_id)
-        await self.app.store.game.set_player_state(player_id, False)
-        await self.app.store.game.add_game_played_to_player(player_id)
-        await self.app.store.game.add_game_loss_to_player(player_id)
 
         vk_user = await self.app.store.game.get_vk_user_by_player(player_id)
         await self.notifier.player_loss(vk_id, vk_user.name)
-        if not remaining_cash:
+
+        await self.app.store.game.set_player_loss(player_id)
+
+        player = await self.app.store.game.get_player_by_id(player_id)
+        if not player.cash:
             await self.notifier.last_cash_spent(
                 vk_id, vk_user.name, vk_user.sex
             )
@@ -347,8 +342,7 @@ class GameManager:
 
         await self.app.store.game.set_game_state(game_id, GameState.inactive)
         await self.app.store.game.set_current_player(game_id, None)
-        await self.app.store.game.clear_dealer_hand(game_id)
-        await self.app.store.game.set_dealer_points(game_id, None)
+        await self.app.store.game.clear_dealer_hand_and_points(game_id)
 
         await self.notifier.game_ended(vk_id)
         await self.notifier.game_offer(vk_id, again=True)
@@ -410,14 +404,49 @@ class GameManager:
         """восстанавливает активную игру после отключения сервера"""
 
         if game.state == GameState.gathering:
-            await self.gathering_players(vk_chat_id, game.id)
+            self.logger.info(
+                f"recovery_game, vk_chat_id={vk_chat_id}, game={game}"
+            )
+            all_play = await self.app.store.game_handler._is_all_play(
+                vk_chat_id, game.id
+            )
+
+            if all_play:
+                await self.app.store.game_manager.timer.end_timer(game.id)
+
+                losers = await self.app.store.game.count_losers(game.id)
+                await self.notifier.all_play(vk_chat_id, losers)
+
+                await self.app.store.game_manager.start_betting(
+                    vk_chat_id, game.id
+                )
+            else:
+                await self.gathering_players(vk_chat_id, game.id)
+
             return
 
         if game.state == GameState.betting:
-            await self.start_betting(vk_chat_id, game.id)
+            self.logger.info(
+                f"recovery_game, vk_chat_id={vk_chat_id}, game={game}"
+            )
+            active_players = await self.app.store.game.get_active_players(
+                game.id
+            )
+
+            if all(player.bet for player in active_players):
+                await self.notifier.all_bets_placed(vk_chat_id)
+                await self.app.store.game_manager.start_dealing(
+                    vk_chat_id, game.id
+                )
+            else:
+                await self.start_betting(vk_chat_id, game.id)
+
             return
 
         if game.state == GameState.dealing_players:
+            self.logger.info(
+                f"recovery_game, vk_chat_id={vk_chat_id}, game={game}"
+            )
             if not game.current_player_id:
                 await self.start_dealing(vk_chat_id, game.id)
                 return
@@ -425,15 +454,18 @@ class GameManager:
             current_player = await self.app.store.game.get_player_by_id(
                 game.current_player_id
             )
+            vk_user = await self.app.store.game.get_vk_user_by_player(
+                current_player.id
+            )
 
-            if current_player.hand:
+            if current_player.hand["cards"]:
+                await self.notifier.player_hand(
+                    vk_chat_id, vk_user.name, current_player.hand["cards"]
+                )
                 await self.check_player_hand(
                     vk_chat_id, game.id, current_player.id
                 )
             else:
-                vk_user = await self.app.store.game.get_vk_user_by_player(
-                    current_player.id
-                )
                 await self.notifier.player_turn(
                     vk_chat_id, vk_user.name, vk_user.sex
                 )
@@ -444,27 +476,23 @@ class GameManager:
             return
 
         if game.state == GameState.dealing_dealer:
-            if game.dealer_hand:
-                await self.notifier.deal_to_dealer(vk_chat_id)
+            self.logger.info(
+                f"recovery_game, vk_chat_id={vk_chat_id}, game={game}"
+            )
 
-                if not game.dealer_points:
-                    dealer_points = self.deck.count_points(
-                        game.dealer_hand["cards"]
-                    )
-                    await self.app.store.game.set_dealer_points(
-                        game.id, dealer_points
-                    )
-
-                await self.notifier.cards_received(
-                    vk_chat_id, game.dealer_hand["cards"]
-                )
-                await self.sum_up_results(vk_chat_id, game.id)
-
-            else:
+            if not game.dealer_hand["cards"]:
                 await self.deal_to_dealer(vk_chat_id, game.id)
-            return
+                return
+
+            await self.notifier.cards_received(
+                vk_chat_id, game.dealer_hand["cards"]
+            )
+            await self.sum_up_results(vk_chat_id, game.id)
 
         if game.state == GameState.results:
+            self.logger.info(
+                f"recovery_game, vk_chat_id={vk_chat_id}, game={game}"
+            )
             await self.sum_up_results(vk_chat_id, game.id)
             return
 
@@ -477,23 +505,21 @@ class GameManager:
 
         game = await self.app.store.game.get_game_by_id(game_id)
 
-        await self.app.store.game.set_game_state(game.id, GameState.inactive)
-
         if game.current_player_id:
             await self.app.store.game.set_current_player(game.id, None)
         if game.dealer_hand["cards"]:
-            await self.app.store.game.clear_dealer_hand(game.id)
-        if game.dealer_points:
-            await self.app.store.game.set_dealer_points(game.id, None)
+            await self.app.store.game.clear_dealer_hand_and_points(game.id)
 
         active_players = await self.app.store.game.get_active_players(game.id)
 
         for player in active_players:
-            await self.app.store.game.set_player_state(player.id, False)
             if player.bet:
                 await self.app.store.game.set_player_bet(player.id, None)
             if player.hand["cards"]:
                 await self.app.store.game.clear_player_hand(player.id)
+            await self.app.store.game.set_player_state(player.id, False)
+
+        await self.app.store.game.set_game_state(game.id, GameState.inactive)
 
     async def disconnect(self, app: "Application") -> None:
         """проверка при отключении на наличие активных игр.

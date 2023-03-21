@@ -103,22 +103,23 @@ class GameHandler:
 
         await self.notifier.player_registered(update.peer_id, vk_user.name)
 
-        losers = await self.app.store.game.count_losers(game.id)
-        all_play = await self._is_all_play(update.peer_id, game.id, losers)
+        all_play = await self._is_all_play(update.peer_id, game.id)
 
         if all_play:
             await self.app.store.game_manager.timer.end_timer(game.id)
+
+            losers = await self.app.store.game.count_losers(game.id)
             await self.notifier.all_play(update.peer_id, losers)
+
             await self.app.store.game_manager.start_betting(
                 update.peer_id, game.id
             )
 
-    async def _is_all_play(
-        self, vk_chat_id: int, game_id: int, losers: int
-    ) -> bool:
+    async def _is_all_play(self, vk_chat_id: int, game_id: int) -> bool:
         """предикат, проверяющий, все ли участники чата,
         у которых остался cash, согласились играть"""
         # TODO учитывать нажавших "пас"
+
         chat_users = await self.app.store.vk_api.get_chat_users(vk_chat_id)
         if not chat_users:
             return False
@@ -126,6 +127,8 @@ class GameHandler:
         active_players = await self.app.store.game.get_active_players(game_id)
         if not active_players:
             return False
+
+        losers = await self.app.store.game.count_losers(game_id)
 
         return len(active_players) == (len(chat_users) - losers)
 
@@ -282,6 +285,9 @@ class GameHandler:
             await self.notifier.not_a_player_cash(update.peer_id, vk_user.name)
             return
 
+        if player.bet:
+            player.cash -= player.bet
+
         vk_user = await self.app.store.game.get_vk_user_by_player(player.id)
         await self.notifier.show_cash(update.peer_id, vk_user.name, player.cash)
 
@@ -306,7 +312,9 @@ class GameHandler:
         await self.notifier.game_aborted(update.peer_id, causer.name)
 
     @game_must_be_on
-    @game_must_be_on_state(GameState.dealing_players, GameState.dealing_dealer)
+    @game_must_be_on_state(
+        GameState.dealing_players, GameState.dealing_dealer, GameState.results
+    )
     async def cancel_game(self, update: Update) -> None:
         """досрочно останавливает игру"""
 

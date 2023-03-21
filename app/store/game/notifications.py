@@ -475,7 +475,13 @@ class GameNotifier(BotNotifier):
     async def game_ended(self, peer_id: int) -> None:
         """уведомляет чат о завершении игры"""
 
-        msg = BotMessage(peer_id=peer_id, text=GamePhrase.game_ended())
+        msg = BotMessage(
+            peer_id=peer_id,
+            text=GamePhrase.game_ended(),
+            keyboard=Keyboard(
+                buttons=[[GameButton.start, GameButton.rules]]
+            ).json,
+        )
         await self.app.store.vk_api.send_message(msg)
 
     @bot_typing

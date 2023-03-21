@@ -22,7 +22,7 @@ class UpdateSender:
 
     async def connect(self, app: "Application"):
         self.connection = await aio_pika.connect_robust(
-            host=self.app.config.server.host
+            self.app.config.rabbitmq.url
         )
 
         async with self.connection:
@@ -43,7 +43,7 @@ class UpdateSender:
             return
 
         self.connection = await aio_pika.connect_robust(
-            host=self.app.config.server.host
+            self.app.config.rabbitmq.url
         )
 
         async with self.connection:
