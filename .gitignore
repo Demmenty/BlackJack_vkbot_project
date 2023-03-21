@@ -134,3 +134,6 @@ dmypy.json
 # my notes
 work_notes
 config.yml
+api_service/tests/test_config.yml
+bot_service/tests/test_config.yml
+alembic.ini
