@@ -23,20 +23,7 @@ class Database:
     async def connect(self, *_: Any, **__: Any) -> None:
         self._db = db
 
-        url = (
-            str(self.app.config.database.type)
-            + "+"
-            + str(self.app.config.database.driver)
-            + "://"
-            + str(self.app.config.database.user)
-            + ":"
-            + str(self.app.config.database.password)
-            + "@"
-            + str(self.app.config.database.host)
-        )
-        if self.app.config.database.port:
-            url += ":" + str(self.app.config.database.port)
-        url += "/" + str(self.app.config.database.database)
+        url = self._build_db_url()
 
         self._engine = create_async_engine(url, echo=True, future=True)
 
@@ -53,3 +40,21 @@ class Database:
     async def disconnect(self, *_: list, **__: dict) -> None:
         if self._engine:
             await self._engine.dispose()
+
+    def _build_db_url(self) -> str:
+        url = (
+            str(self.app.config.database.type)
+            + "+"
+            + str(self.app.config.database.driver)
+            + "://"
+            + str(self.app.config.database.user)
+            + ":"
+            + str(self.app.config.database.password)
+            + "@"
+            + str(self.app.config.database.host)
+        )
+        if self.app.config.database.port:
+            url += ":" + str(self.app.config.database.port)
+        url += "/" + str(self.app.config.database.database)
+
+        return url
