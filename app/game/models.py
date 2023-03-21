@@ -31,7 +31,7 @@ class GameModel(db):
 
     id = Column(Integer, primary_key=True)
     chat_id = Column(ForeignKey("chat.id", ondelete="CASCADE"), nullable=False)
-    state = Column(String, default=GameState.inactive, nullable=False)
+    state = Column(String(50), default=GameState.inactive, nullable=False)
     current_player_id = Column(Integer, nullable=True)
     dealer_hand: dict = Column(JSON, default={"cards": []}, nullable=False)
     dealer_points = Column(Integer, nullable=True)
@@ -79,8 +79,8 @@ class VKUserModel(db):
 
     id = Column(Integer, primary_key=True)
     vk_id = Column(Integer, nullable=False)
-    name = Column(String, nullable=False)
-    sex = Column(String, nullable=False)
+    name = Column(String(255), nullable=False)
+    sex = Column(String(20), nullable=False)
 
     players = relationship("PlayerModel", back_populates="vk_user")
 
