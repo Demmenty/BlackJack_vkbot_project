@@ -4,6 +4,8 @@ admin:
   email: admin@admin.com
   password: admin
 database:
+  type: postgresql
+  driver: asyncpg
   host: localhost
   port: 5432
   user: postgres

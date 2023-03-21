@@ -26,6 +26,8 @@ class BotConfig:
 
 @dataclass
 class DatabaseConfig:
+    type: str = "postgresql"
+    driver: str = "asyncpg"
     host: str = "localhost"
     port: int = 5432
     user: str = "postgres"

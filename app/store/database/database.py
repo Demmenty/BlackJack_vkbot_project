@@ -24,7 +24,10 @@ class Database:
         self._db = db
 
         url = (
-            "postgresql+asyncpg://"
+            str(self.app.config.database.type)
+            + "+"
+            + str(self.app.config.database.driver)
+            + "://"
             + str(self.app.config.database.user)
             + ":"
             + str(self.app.config.database.password)
