@@ -20,12 +20,10 @@ class UpdateReceiver:
         app.on_startup.append(self.connect)
 
     async def connect(self, app: "Application"):
-        connection = await aio_pika.connect_robust(
-            host=self.app.config.server.host
-        )
+        connection = await aio_pika.connect_robust(self.app.config.rabbitmq.url)
         channel = await connection.channel()
         await channel.set_qos(prefetch_count=10)
-        queue = await channel.declare_queue(self.queue_name)
+        queue = await channel.declare_queue(self.queue_name, durable=True)
         await queue.consume(self.route_update)
 
     async def route_update(

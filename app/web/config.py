@@ -39,12 +39,18 @@ class ServerConfig:
 
 
 @dataclass
+class RabbitMQConfig:
+    url: str = "localhost"
+
+
+@dataclass
 class Config:
     admin: AdminConfig
     session: SessionConfig = None
     bot: BotConfig = None
     database: DatabaseConfig = None
     server: ServerConfig = None
+    rabbitmq: RabbitMQConfig = None
 
 
 def setup_config(app: "Application", config_path: str):
@@ -65,4 +71,5 @@ def setup_config(app: "Application", config_path: str):
         ),
         database=DatabaseConfig(**raw_config["database"]),
         server=ServerConfig(host=raw_config["server"]["host"]),
+        rabbitmq=RabbitMQConfig(url=raw_config["rabbitmq"]["url"]),
     )
