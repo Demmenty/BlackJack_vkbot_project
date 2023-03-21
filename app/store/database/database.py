@@ -33,11 +33,10 @@ class Database:
             + str(self.app.config.database.password)
             + "@"
             + str(self.app.config.database.host)
-            + ":"
-            + str(self.app.config.database.port)
-            + "/"
-            + str(self.app.config.database.database)
         )
+        if self.app.config.database.port:
+            url += ":" + str(self.app.config.database.port)
+        url += "/" + str(self.app.config.database.database)
 
         self._engine = create_async_engine(url, echo=True, future=True)
 
