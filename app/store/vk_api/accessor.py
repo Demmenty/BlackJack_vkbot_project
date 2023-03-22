@@ -127,6 +127,12 @@ class VkApiAccessor(BaseAccessor):
             self.logger.info(data)
 
             if data.get("error"):
+
+                if data["error"]["error_code"] == 7:
+                    return
+                if data["error"]["error_code"] == 9:
+                    return
+
                 await self.notifier.vk_error(
                     peer_id=message.peer_id,
                     error_code=data["error"]["error_code"],
