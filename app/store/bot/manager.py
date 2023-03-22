@@ -30,7 +30,7 @@ class BotManager:
         elif update.action_type == "chat_invite_user":
             await self.handle_chat_invite(update)
 
-        else:
+        elif not update.action_type:
             await self.handle_chat_msg(update)
 
     async def handle_private_msg(self, update: Update) -> None:
@@ -39,7 +39,12 @@ class BotManager:
         await self.notifier.no_personal_chating(update.peer_id)
 
     async def handle_chat_invite(self, update: Update) -> None:
-        """обработка приглашения в беседу"""
+        """обработка приглашения в беседу бота"""
+
+        bot_id = - self.app.config.bot.group_id
+
+        if update.member_id != bot_id:
+            return
 
         game_on = await self.app.store.game.is_game_on(update.peer_id)
 
