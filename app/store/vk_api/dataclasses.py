@@ -10,6 +10,7 @@ class Update:
     from_id: int
     peer_id: int
     action_type: str = ""
+    member_id: int | None = None
     text: str = ""
 
     @property

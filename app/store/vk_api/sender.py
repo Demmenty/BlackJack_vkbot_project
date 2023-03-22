@@ -55,15 +55,19 @@ class UpdateSender:
             )
 
     def _prepare_update(self, raw_update: dict) -> Update:
+
+        action_type = ""
+        member_id = None
+
         if raw_update["object"]["message"].get("action"):
             action_type = raw_update["object"]["message"]["action"]["type"]
-        else:
-            action_type = ""
+            member_id = raw_update["object"]["message"]["action"].get("member_id")
 
         update = Update(
             id=raw_update["object"]["message"]["id"],
             type=raw_update["type"],
             action_type=action_type,
+            member_id=member_id,
             from_id=raw_update["object"]["message"]["from_id"],
             peer_id=raw_update["object"]["message"]["peer_id"],
             text=raw_update["object"]["message"]["text"],
