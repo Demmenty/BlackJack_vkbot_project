@@ -14,11 +14,6 @@
 * Имеет специфический игровой отыгрыш.
 * Рекомендуется назначить бота администратором.
 
-## Демо
-
-* Bot https://vk.com/shadow_dementia
-* VK-chat https://vk.me/join/pwjTFB/1ylawP0PjG7UWi60Cf1Jv1f7S6I8=
-
 ## Технологии
 
 Aiohttp, Asyncio, PostgreSQL, RabbitMQ, Pytest
